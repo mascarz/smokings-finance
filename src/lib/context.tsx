@@ -55,20 +55,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Carregar dados do localStorage ao iniciar
   useEffect(() => {
-    const savedUser = localStorage.getItem("smokings_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setSales(JSON.parse(localStorage.getItem("smokings_sales") || "[]"));
-      setNotinhas(JSON.parse(localStorage.getItem("smokings_notinhas") || "[]"));
-      setEmployees(JSON.parse(localStorage.getItem("smokings_employees") || "[]"));
-      setExpenses(JSON.parse(localStorage.getItem("smokings_expenses") || "[]"));
-      setCustomers(JSON.parse(localStorage.getItem("smokings_customers") || "[]"));
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("smokings_user");
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+        setSales(JSON.parse(localStorage.getItem("smokings_sales") || "[]"));
+        setNotinhas(JSON.parse(localStorage.getItem("smokings_notinhas") || "[]"));
+        setEmployees(JSON.parse(localStorage.getItem("smokings_employees") || "[]"));
+        setExpenses(JSON.parse(localStorage.getItem("smokings_expenses") || "[]"));
+        setCustomers(JSON.parse(localStorage.getItem("smokings_customers") || "[]"));
+      }
     }
   }, []);
 
   // Salvar dados sempre que mudarem
   useEffect(() => {
-    if (user) {
+    if (typeof window !== "undefined" && user) {
       localStorage.setItem("smokings_user", JSON.stringify(user));
       localStorage.setItem("smokings_sales", JSON.stringify(sales));
       localStorage.setItem("smokings_notinhas", JSON.stringify(notinhas));
