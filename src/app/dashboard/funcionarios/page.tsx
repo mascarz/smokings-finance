@@ -141,7 +141,7 @@ export default function FuncionariosPage() {
               <div className="pt-4 border-t border-border">
                 <p className="text-xs font-bold uppercase text-muted-foreground mb-2">Permissões:</p>
                 <div className="flex flex-wrap gap-1">
-                  {emp.permissions.map(perm => (
+                  {emp.permissions.map((perm: string) => (
                     <span key={perm} className="px-2 py-1 rounded-md bg-secondary text-[10px] font-medium capitalize">
                       {perm}
                     </span>
