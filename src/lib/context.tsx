@@ -57,21 +57,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedUser = localStorage.getItem("smokings_user");
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-        setSales(JSON.parse(localStorage.getItem("smokings_sales") || "[]"));
-        setNotinhas(JSON.parse(localStorage.getItem("smokings_notinhas") || "[]"));
-        setEmployees(JSON.parse(localStorage.getItem("smokings_employees") || "[]"));
-        setExpenses(JSON.parse(localStorage.getItem("smokings_expenses") || "[]"));
-        setCustomers(JSON.parse(localStorage.getItem("smokings_customers") || "[]"));
-      }
+      if (savedUser) setUser(JSON.parse(savedUser));
+      
+      const savedSales = localStorage.getItem("smokings_sales");
+      if (savedSales) setSales(JSON.parse(savedSales));
+      
+      const savedNotinhas = localStorage.getItem("smokings_notinhas");
+      if (savedNotinhas) setNotinhas(JSON.parse(savedNotinhas));
+      
+      const savedEmployees = localStorage.getItem("smokings_employees");
+      if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+      
+      const savedExpenses = localStorage.getItem("smokings_expenses");
+      if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
+      
+      const savedCustomers = localStorage.getItem("smokings_customers");
+      if (savedCustomers) setCustomers(JSON.parse(savedCustomers));
     }
   }, []);
 
-  // Salvar dados sempre que mudarem
+  // Salvar dados sempre que mudarem (independente de estar logado)
   useEffect(() => {
-    if (typeof window !== "undefined" && user) {
-      localStorage.setItem("smokings_user", JSON.stringify(user));
+    if (typeof window !== "undefined") {
+      if (user) localStorage.setItem("smokings_user", JSON.stringify(user));
       localStorage.setItem("smokings_sales", JSON.stringify(sales));
       localStorage.setItem("smokings_notinhas", JSON.stringify(notinhas));
       localStorage.setItem("smokings_employees", JSON.stringify(employees));
