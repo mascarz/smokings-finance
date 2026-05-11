@@ -41,15 +41,15 @@ export default function VendasPage() {
   const totalRevenue = sales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 max-w-full overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Controle de Vendas</h1>
-          <p className="text-muted-foreground">Registre seus produtos vendidos e acompanhe o faturamento real.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Controle de Vendas</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Registre seus produtos vendidos e acompanhe o faturamento real.</p>
         </div>
         <Button 
           variant="premium" 
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full md:w-auto justify-center"
           onClick={() => setIsModalOpen(true)}
         >
           <Plus size={18} />
@@ -57,23 +57,23 @@ export default function VendasPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <Card className="bg-emerald-500/5 border-emerald-500/10">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 p-4">
             <CardDescription className="text-emerald-600 font-bold uppercase text-[10px]">Faturamento Total</CardDescription>
-            <CardTitle className="text-3xl font-bold text-emerald-600">{formatCurrency(totalRevenue)}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl font-bold text-emerald-600">{formatCurrency(totalRevenue)}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="bg-primary/5 border-primary/10">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 p-4">
             <CardDescription className="text-primary/60 font-bold uppercase text-[10px]">Total de Itens Vendidos</CardDescription>
-            <CardTitle className="text-3xl font-bold">{sales.reduce((acc, curr) => acc + curr.quantity, 0)}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl font-bold">{sales.reduce((acc, curr) => acc + curr.quantity, 0)}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="bg-secondary/50 border-border">
-          <CardHeader className="pb-2">
+        <Card className="bg-secondary/50 border-border sm:col-span-2 md:col-span-1">
+          <CardHeader className="pb-2 p-4">
             <CardDescription className="text-muted-foreground font-bold uppercase text-[10px]">Vendas Registradas</CardDescription>
-            <CardTitle className="text-3xl font-bold">{sales.length}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl font-bold">{sales.length}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -90,7 +90,34 @@ export default function VendasPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-xl overflow-hidden">
+      {/* Tabela Responsiva / Cards em Mobile */}
+      <div className="block md:hidden space-y-4">
+        {filteredSales.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground bg-secondary/20 rounded-xl border border-dashed border-border">
+            Nenhuma venda registrada ainda.
+          </div>
+        ) : (
+          filteredSales.map((sale) => (
+            <Card key={sale.id} className="border-border overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-base">{sale.product}</h3>
+                    <p className="text-xs text-muted-foreground">{new Date(sale.date).toLocaleString('pt-BR')}</p>
+                  </div>
+                  <span className="font-bold text-emerald-500">{formatCurrency(sale.amount * sale.quantity)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t border-border">
+                  <span className="text-muted-foreground">Qtd: {sale.quantity}x</span>
+                  <span className="text-muted-foreground">Preço: {formatCurrency(sale.amount)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      <Card className="hidden md:block border-none shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

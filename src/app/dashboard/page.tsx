@@ -99,15 +99,15 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 max-w-full overflow-x-hidden">
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Painel Geral</h1>
-          <p className="text-muted-foreground">Aqui está o que está acontecendo na Smokings hoje.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Painel Geral</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Aqui está o que está acontecendo na Smokings hoje.</p>
         </div>
         <div 
-          className="flex items-center gap-2 px-4 py-2 bg-secondary rounded-xl border border-border cursor-pointer hover:bg-accent transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-secondary rounded-xl border border-border cursor-pointer hover:bg-accent transition-colors self-start md:self-auto"
           onClick={() => toast("Calendário de eventos em breve!", "info")}
         >
           <Calendar size={18} className="text-muted-foreground" />
@@ -116,7 +116,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -133,7 +133,7 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl md:text-2xl font-bold">
                   {typeof stat.value === "number" && stat.title.includes("Faturamento") || stat.title.includes("Ticket")
                     ? formatCurrency(stat.value)
                     : stat.value}
@@ -144,10 +144,10 @@ export default function DashboardPage() {
                   ) : (
                     <TrendingDown size={14} className="text-rose-500" />
                   )}
-                  <span className={stat.trend === "up" ? "text-emerald-500 text-xs font-bold" : "text-rose-500 text-xs font-bold"}>
+                  <span className={stat.trend === "up" ? "text-emerald-500 text-[10px] md:text-xs font-bold" : "text-rose-500 text-[10px] md:text-xs font-bold"}>
                     {stat.change}
                   </span>
-                  <span className="text-[10px] text-muted-foreground ml-1">em relação a ontem</span>
+                  <span className="text-[9px] md:text-[10px] text-muted-foreground ml-1">em relação a ontem</span>
                 </div>
               </CardContent>
             </Card>
@@ -157,14 +157,14 @@ export default function DashboardPage() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
-        <Card className="lg:col-span-4 border-none shadow-xl bg-gradient-to-br from-card to-secondary/30">
-          <CardHeader>
-            <CardTitle>Visão Geral de Faturamento</CardTitle>
-            <CardDescription>Acompanhe o desempenho diário da sua tabacaria</CardDescription>
+        <Card className="lg:col-span-4 border-none shadow-xl bg-gradient-to-br from-card to-secondary/30 overflow-hidden">
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-lg md:text-xl">Visão Geral de Faturamento</CardTitle>
+            <CardDescription className="text-xs md:text-sm">Acompanhe o desempenho diário da sua tabacaria</CardDescription>
           </CardHeader>
-          <CardContent className="h-[350px]">
+          <CardContent className="h-[250px] md:h-[350px] p-2 md:p-6">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dynamicChartData}>
+              <AreaChart data={dynamicChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f5b10a" stopOpacity={0.3}/>
@@ -176,12 +176,12 @@ export default function DashboardPage() {
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#888', fontSize: 12 }} 
+                  tick={{ fill: '#888', fontSize: 10 }} 
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#888', fontSize: 12 }}
+                  tick={{ fill: '#888', fontSize: 10 }}
                   tickFormatter={(value) => `R$ ${value}`}
                 />
                 <Tooltip 
@@ -189,7 +189,8 @@ export default function DashboardPage() {
                     backgroundColor: 'rgba(0,0,0,0.8)', 
                     border: 'none', 
                     borderRadius: '12px',
-                    color: '#fff'
+                    color: '#fff',
+                    fontSize: '12px'
                   }}
                   itemStyle={{ color: '#f5b10a' }}
                 />
@@ -197,7 +198,7 @@ export default function DashboardPage() {
                   type="monotone" 
                   dataKey="faturamento" 
                   stroke="#f5b10a" 
-                  strokeWidth={3}
+                  strokeWidth={2}
                   fillOpacity={1} 
                   fill="url(#colorFaturamento)" 
                 />
@@ -207,16 +208,16 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="lg:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between p-4 md:p-6">
             <div>
-              <CardTitle>IA Financeira</CardTitle>
-              <CardDescription>Insights inteligentes para seu negócio</CardDescription>
+              <CardTitle className="text-lg md:text-xl">IA Financeira</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Insights inteligentes</CardDescription>
             </div>
-            <div className="w-10 h-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-600">
-              <Zap size={20} />
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-600">
+              <Zap size={18} />
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 md:p-6">
             {sales.length > 0 ? (
               <>
                 <div className="p-4 rounded-xl bg-secondary/50 border border-border space-y-2">

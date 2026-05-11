@@ -77,69 +77,84 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/ai", icon: Zap, label: "IA Financeira" },
   ];
 
-  return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-72 border-r border-border p-6 fixed inset-y-0">
-        <div className="flex items-center gap-2 mb-10 px-2">
-          <div className="w-8 h-8 rounded-lg bg-black dark:bg-white flex items-center justify-center">
-            <span className="text-white dark:text-black font-bold">S</span>
-          </div>
-          <span className="font-bold text-lg tracking-tight">SMOKINGS</span>
+  const SidebarContent = () => (
+    <>
+      <div className="flex items-center gap-2 mb-10 px-2">
+        <div className="w-8 h-8 rounded-lg bg-black dark:bg-white flex items-center justify-center">
+          <span className="text-white dark:text-black font-bold">S</span>
         </div>
+        <span className="font-bold text-lg tracking-tight">SMOKINGS</span>
+      </div>
 
-        <nav className="flex-1 flex flex-col gap-2">
-          {menuItems.map((item) => (
+      <nav className="flex-1 flex flex-col gap-2">
+        {menuItems.map((item) => (
+          <div key={item.href} onClick={() => setIsSidebarOpen(false)}>
             <SidebarItem 
-              key={item.href} 
               {...item} 
               active={pathname === item.href} 
             />
-          ))}
-        </nav>
+          </div>
+        ))}
+      </nav>
 
-        <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-border">
+      <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-border">
+        <div onClick={() => setIsSidebarOpen(false)}>
           <SidebarItem href="/dashboard/perfil" icon={UserCircle} label="Meu Perfil" active={pathname === "/dashboard/perfil"} />
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-all duration-200 group w-full text-left"
-          >
-            <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
-            <span className="font-medium">Sair</span>
-          </button>
         </div>
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-all duration-200 group w-full text-left"
+        >
+          <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
+          <span className="font-medium">Sair</span>
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-background text-foreground overflow-x-hidden">
+      {/* Sidebar Desktop */}
+      <aside className="hidden lg:flex flex-col w-72 border-r border-border p-6 fixed inset-y-0">
+        <SidebarContent />
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-72 flex flex-col">
+      <div className="flex-1 lg:ml-72 flex flex-col w-full min-w-0">
         {/* Header */}
-        <header className="h-20 border-b border-border px-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
-          <button 
-            className="lg:hidden p-2 hover:bg-accent rounded-lg"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu size={24} />
-          </button>
+        <header className="h-20 border-b border-border px-4 md:px-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
+          <div className="flex items-center gap-4">
+            <button 
+              className="lg:hidden p-2 hover:bg-accent rounded-lg"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
 
-          <div className="hidden lg:block">
-            <h2 className="text-sm font-medium text-muted-foreground">Bem-vindo de volta,</h2>
-            <h1 className="text-xl font-bold">Dono da Tabacaria</h1>
+            <div className="hidden sm:block lg:hidden">
+              <span className="font-bold text-lg tracking-tight">SMOKINGS</span>
+            </div>
+
+            <div className="hidden lg:block">
+              <h2 className="text-sm font-medium text-muted-foreground">Bem-vindo de volta,</h2>
+              <h1 className="text-xl font-bold">{user?.name || "Dono da Tabacaria"}</h1>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Button variant="ghost" size="icon" className="rounded-full relative">
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-gold-500 rounded-full"></span>
             </Button>
             <ThemeToggle />
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border">
-              <UserCircle size={24} />
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-secondary flex items-center justify-center border border-border">
+              <UserCircle size={20} className="md:size-24" />
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="p-6 md:p-10 flex-1">
+        <main className="p-4 md:p-6 lg:p-10 flex-1 w-full max-w-[100vw] overflow-x-hidden">
           {children}
         </main>
       </div>
@@ -147,37 +162,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 w-72 bg-background border-r border-border p-6 z-50 transition-transform duration-300 lg:hidden",
+        "fixed inset-y-0 left-0 w-72 bg-background border-r border-border p-6 z-50 transition-transform duration-300 lg:hidden flex flex-col shadow-2xl",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between mb-10 px-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-black dark:bg-white flex items-center justify-center">
-              <span className="text-white dark:text-black font-bold">S</span>
-            </div>
-            <span className="font-bold text-lg tracking-tight">SMOKINGS</span>
-          </div>
+        <div className="flex items-center justify-end mb-4">
           <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-accent rounded-lg">
             <X size={24} />
           </button>
         </div>
-
-        <nav className="flex flex-col gap-2">
-          {menuItems.map((item) => (
-            <SidebarItem 
-              key={item.href} 
-              {...item} 
-              active={pathname === item.href} 
-            />
-          ))}
-        </nav>
+        <SidebarContent />
       </aside>
     </div>
   );
