@@ -25,6 +25,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarItemProps {
   href: string;
@@ -129,43 +130,73 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarContent />
       </aside>
 
+      {/* Sidebar Mobile Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-[280px] bg-white dark:bg-slate-950 p-6 z-[60] lg:hidden border-r border-slate-200 dark:border-slate-800"
+            >
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="absolute top-6 right-6 p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500"
+              >
+                <X size="20" />
+              </button>
+              <SidebarContent />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Main Content */}
       <div className="flex-1 lg:ml-72 flex flex-col w-full min-w-0">
         {/* Header */}
         <header className="h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-xl z-30 border-b border-slate-200/50 dark:border-slate-800/50">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <button 
-              className="lg:hidden p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm"
+              className="lg:hidden p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:bg-slate-50 transition-colors"
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu size={20} />
             </button>
 
-            <div className="lg:block">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Gestão de Tabacaria</h2>
+            <div className="flex flex-col">
+              <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 truncate max-w-[120px] md:max-w-none">Gestão de Tabacaria</h2>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black tracking-tight">{user?.name || "Premium User"}</h1>
-                <div className="px-2 py-0.5 rounded-md bg-gold-500/10 text-gold-600 text-[10px] font-bold uppercase tracking-wider">Proprietário</div>
+                <h1 className="text-base md:text-xl font-black tracking-tight truncate max-w-[120px] md:max-w-none">{user?.name || "Premium User"}</h1>
+                <div className="hidden xs:block px-1.5 py-0.5 rounded-md bg-gold-500/10 text-gold-600 text-[8px] md:text-[10px] font-bold uppercase tracking-wider">Proprietário</div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-6">
-            <div className="hidden sm:flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="rounded-xl relative hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Bell size={20} className="text-slate-500" />
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-background"></span>
+          <div className="flex items-center gap-2 md:gap-6">
+            <div className="flex items-center gap-1 md:gap-2">
+              <Button variant="ghost" size="icon" className="w-9 h-9 md:w-10 md:h-10 rounded-xl relative hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <Bell size={18} className="text-slate-500 md:size-[20px]" />
+                <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full border-2 border-background"></span>
               </Button>
               <ThemeToggle />
             </div>
             
-            <div className="flex items-center gap-3 pl-3 md:pl-6 border-l border-slate-200 dark:border-slate-800">
-              <div className="flex flex-col items-end hidden xs:flex">
+            <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-6 border-l border-slate-200 dark:border-slate-800">
+              <div className="flex flex-col items-end hidden sm:flex">
                 <span className="text-sm font-bold tracking-tight leading-none">{user?.name || "Admin"}</span>
                 <span className="text-[10px] text-slate-400 font-medium">Online agora</span>
               </div>
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-inner overflow-hidden">
-                <UserCircle size={24} className="text-slate-400" />
+              <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-inner overflow-hidden">
+                <UserCircle size={20} className="text-slate-400 md:size-[24px]" />
               </div>
             </div>
           </div>
@@ -176,27 +207,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Mobile Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 w-72 bg-background border-r border-border p-6 z-50 transition-transform duration-300 lg:hidden flex flex-col shadow-2xl",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex items-center justify-end mb-4">
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-accent rounded-lg">
-            <X size={24} />
-          </button>
-        </div>
-        <SidebarContent />
-      </aside>
     </div>
   );
 }

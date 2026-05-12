@@ -89,21 +89,21 @@ export default function ComandasPage() {
   };
 
   return (
-    <div className="space-y-10 animate-in">
+    <div className="space-y-6 md:space-y-10 animate-in relative pb-20 md:pb-0">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-[10px] font-bold uppercase tracking-widest text-gold-600">
-            <ClipboardList size={12} />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+        <div className="space-y-1 md:space-y-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-gold-600">
+            <ClipboardList size={10} className="md:size-[12px]" />
             Gestão de Mesas
           </div>
-          <h1 className="text-4xl font-black tracking-tight">Comandas <span className="text-gold-500">Ativas</span></h1>
-          <p className="text-slate-500 font-medium">Controle o consumo em tempo real com precisão.</p>
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight">Comandas <span className="text-gold-500">Ativas</span></h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium">Controle o consumo em tempo real com precisão.</p>
         </div>
         <Button 
           variant="gold" 
           size="lg"
-          className="rounded-2xl px-8 shadow-xl shadow-gold-500/20 group"
+          className="hidden md:flex rounded-2xl px-8 shadow-xl shadow-gold-500/20 group h-14"
           onClick={() => setIsModalOpen(true)}
         >
           <Plus size={20} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
@@ -111,37 +111,45 @@ export default function ComandasPage() {
         </Button>
       </div>
 
+      {/* Floating Action Button for Mobile */}
+      <button 
+        onClick={() => setIsModalOpen(true)}
+        className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-2xl gold-gradient text-white shadow-2xl shadow-gold-500/40 z-40 flex items-center justify-center active:scale-95 transition-transform"
+      >
+        <Plus size={28} />
+      </button>
+
       {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+      <div className="flex flex-row gap-2 md:gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <Input 
-            placeholder="Buscar comanda por nome ou mesa..." 
-            className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm focus:ring-gold-500/20 focus:border-gold-500 transition-all"
+            placeholder="Buscar comanda..." 
+            className="pl-10 md:pl-12 h-12 md:h-14 rounded-xl md:rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm focus:ring-gold-500/20 focus:border-gold-500 transition-all text-sm md:text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="lg" className="h-14 rounded-2xl px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <Filter size={18} className="mr-2 text-slate-400" />
-          Filtros
+        <Button variant="outline" size="lg" className="h-12 md:h-14 rounded-xl md:rounded-2xl px-3 md:px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <Filter size={18} className="md:mr-2 text-slate-400" />
+          <span className="hidden md:inline">Filtros</span>
         </Button>
       </div>
 
       {/* Comandas Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
         <AnimatePresence mode="popLayout">
           {filteredComandas.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="col-span-full py-20 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-900/20"
+              className="col-span-full py-12 md:py-20 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-900/20"
             >
-              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <ClipboardList size={40} className="text-slate-300 dark:text-slate-600" />
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <ClipboardList size={32} className="text-slate-300 dark:text-slate-600 md:size-[40px]" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">Nenhuma comanda aberta</h3>
-              <p className="text-slate-500 max-w-xs mx-auto">Comece abrindo uma nova comanda para seus clientes.</p>
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 mb-1 md:mb-2">Nenhuma comanda aberta</h3>
+              <p className="text-xs md:text-sm text-slate-500 max-w-[200px] md:max-w-xs mx-auto">Comece abrindo uma nova comanda para seus clientes.</p>
             </motion.div>
           ) : (
             filteredComandas.map((comanda, index) => (
@@ -153,66 +161,62 @@ export default function ComandasPage() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
-                <Card className="premium-card border-none group overflow-hidden h-full flex flex-col">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full blur-3xl -translate-y-16 translate-x-16" />
-                  
-                  <CardHeader className="relative p-6 pb-4">
+                <Card className="premium-card border-none group overflow-hidden h-full flex flex-col min-h-[320px]">
+                  <CardHeader className="relative p-4 md:p-6 pb-2 md:pb-4">
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-950 dark:bg-white flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-black/20 group-hover:scale-110 transition-transform">
-                          <User size={24} className="text-white dark:text-slate-950" />
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-slate-950 dark:bg-white flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-black/20 group-hover:scale-105 transition-transform">
+                          <User size={20} className="text-white dark:text-slate-950 md:size-[24px]" />
                         </div>
-                        <div>
-                          <CardTitle className="text-xl font-black tracking-tight">{comanda.customerName}</CardTitle>
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                            <Clock size={12} />
-                            <CardDescription className="text-[10px] font-bold uppercase tracking-wider">
-                              Início: {new Date(comanda.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <div className="min-w-0">
+                          <CardTitle className="text-lg md:text-xl font-black tracking-tight truncate max-w-[120px] md:max-w-none">{comanda.customerName}</CardTitle>
+                          <div className="flex items-center gap-1 text-slate-400">
+                            <Clock size={10} className="md:size-[12px]" />
+                            <CardDescription className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider">
+                              {new Date(comanda.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </CardDescription>
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        <button 
-                          onClick={() => {
-                            setEditingComanda(comanda);
-                            setIsEditModalOpen(true);
-                          }}
-                          className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all"
-                        >
-                          <Edit size={16} />
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => {
+                          setEditingComanda(comanda);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all"
+                      >
+                        <Edit size={16} />
+                      </button>
                     </div>
                   </CardHeader>
 
-                  <CardContent className="relative p-6 pt-0 flex-1 flex flex-col gap-6">
-                    <div className="space-y-3 flex-1 overflow-y-auto max-h-[200px] pr-2 custom-scrollbar">
+                  <CardContent className="relative p-4 md:p-6 pt-0 flex-1 flex flex-col gap-4 md:gap-6">
+                    <div className="space-y-2 md:space-y-3 flex-1 overflow-y-auto max-h-[150px] md:max-h-[200px] pr-1 custom-scrollbar">
                       {comanda.items.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-8 opacity-40">
-                          <ShoppingBag size={32} className="mb-2" />
-                          <p className="text-xs font-bold uppercase tracking-widest">Aguardando pedidos</p>
+                        <div className="flex flex-col items-center justify-center py-6 md:py-8 opacity-30">
+                          <ShoppingBag size={24} className="mb-2 md:size-[32px]" />
+                          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-center">Aguardando pedidos</p>
                         </div>
                       ) : (
                         comanda.items.map((item) => (
-                          <div key={item.productId} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group/item">
-                            <div className="flex-1">
-                              <p className="font-bold text-sm tracking-tight">{item.name}</p>
-                              <p className="text-[10px] font-black text-gold-600 uppercase tracking-widest">{formatCurrency(item.price)}</p>
+                          <div key={item.productId} className="flex items-center justify-between p-2.5 md:p-3 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                            <div className="flex-1 min-w-0 mr-2">
+                              <p className="font-bold text-xs md:text-sm tracking-tight truncate">{item.name}</p>
+                              <p className="text-[8px] md:text-[10px] font-black text-gold-600 uppercase tracking-widest">{formatCurrency(item.price).replace(",00", "")}</p>
                             </div>
-                            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <div className="flex items-center gap-2 md:gap-3 bg-white dark:bg-slate-900 p-1 md:p-1.5 rounded-lg md:rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                               <button 
                                 onClick={() => updateComandaItem(comanda.id, item.productId, item.quantity - 1)}
-                                className="text-slate-400 hover:text-rose-500 transition-colors"
+                                className="text-slate-400 hover:text-rose-500 transition-colors p-0.5"
                               >
-                                <MinusCircle size={18} />
+                                <MinusCircle size={16} className="md:size-[18px]" />
                               </button>
-                              <span className="text-sm font-black w-4 text-center">{item.quantity}</span>
+                              <span className="text-xs md:text-sm font-black w-3 md:w-4 text-center">{item.quantity}</span>
                               <button 
                                 onClick={() => updateComandaItem(comanda.id, item.productId, item.quantity + 1)}
-                                className="text-slate-400 hover:text-emerald-500 transition-colors"
+                                className="text-slate-400 hover:text-emerald-500 transition-colors p-0.5"
                               >
-                                <PlusCircle size={18} />
+                                <PlusCircle size={16} className="md:size-[18px]" />
                               </button>
                             </div>
                           </div>
@@ -220,35 +224,35 @@ export default function ComandasPage() {
                       )}
                     </div>
 
-                    <div className="pt-6 border-t border-slate-100 dark:border-slate-800 mt-auto">
-                      <div className="flex items-center justify-between mb-6">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Total Acumulado</span>
-                        <span className="text-3xl font-black tracking-tighter text-slate-950 dark:text-white">
-                          {formatCurrency(calculateTotal(comanda.items))}
+                    <div className="pt-4 md:pt-6 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                      <div className="flex items-center justify-between mb-4 md:mb-6">
+                        <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total</span>
+                        <span className="text-xl md:text-3xl font-black tracking-tighter text-slate-950 dark:text-white">
+                          {formatCurrency(calculateTotal(comanda.items)).replace(",00", "")}
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-2 md:gap-3">
                         <Button 
                           variant="outline" 
                           size="lg"
-                          className="rounded-2xl h-14 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                          className="rounded-xl md:rounded-2xl h-11 md:h-14 font-bold text-xs md:text-base border-slate-200 dark:border-slate-800"
                           onClick={() => {
                             setSelectedComanda(comanda);
                             setIsItemsModalOpen(true);
                           }}
                         >
-                          <Plus size={18} className="mr-2" />
+                          <Plus size={16} className="mr-1.5 md:mr-2" />
                           Itens
                         </Button>
                         <Button 
                           variant="premium" 
                           size="lg"
-                          className="rounded-2xl h-14 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+                          className="rounded-xl md:rounded-2xl h-11 md:h-14 font-bold text-xs md:text-base bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
                           onClick={() => handlePay(comanda.id)}
                           disabled={comanda.items.length === 0}
                         >
-                          <CheckCircle size={18} className="mr-2" />
+                          <CheckCircle size={16} className="mr-1.5 md:mr-2" />
                           Pagar
                         </Button>
                       </div>

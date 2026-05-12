@@ -39,20 +39,20 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className={cn(
-                "bg-card w-full max-w-lg rounded-2xl border border-border shadow-2xl pointer-events-auto overflow-hidden",
+                "bg-card w-full max-w-lg md:rounded-[2rem] rounded-t-[2rem] border-x border-t md:border-b border-border shadow-2xl pointer-events-auto overflow-hidden absolute bottom-0 md:relative",
                 className
               )}
             >
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <h3 className="text-xl font-bold">{title}</h3>
+              <div className="flex items-center justify-between p-5 md:p-8 border-b border-border/50">
+                <h3 className="text-xl md:text-2xl font-black tracking-tight">{title}</h3>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                  className="p-2.5 bg-secondary/50 hover:bg-secondary rounded-xl transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div className="p-6">
+              <div className="p-5 md:p-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
                 {children}
               </div>
             </motion.div>

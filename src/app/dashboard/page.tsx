@@ -105,42 +105,41 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-slate-950 p-8 md:p-12 text-white shadow-2xl">
-        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-64 h-64 bg-gold-500/20 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px]" />
+      <section className="relative overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] bg-slate-950 p-6 md:p-12 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-48 h-48 md:w-64 md:h-64 bg-gold-500/20 rounded-full blur-[80px] md:blur-[100px]" />
         
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gold-400">
-              <Zap size={12} className="fill-gold-400" />
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
+          <div className="space-y-3 md:space-y-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 border border-white/10 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-gold-400">
+              <Zap size={10} className="fill-gold-400 md:size-[12px]" />
               Smokings Premium System
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              Visão Geral da <br />
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+              Visão Geral da <br className="hidden sm:block" />
               Sua <span className="gold-text-gradient">Tabacaria</span>
             </h1>
-            <p className="text-slate-400 max-w-md text-sm md:text-base">
+            <p className="text-slate-400 max-w-md text-xs md:text-base">
               Acompanhe seu desempenho financeiro e gestão de clientes com inteligência e elegância.
             </p>
           </div>
           
           <div className="flex flex-col gap-3 w-full md:w-auto">
-            <Button variant="gold" size="lg" className="w-full md:w-auto gap-2 group">
-              Baixar Relatório Completo
+            <Button variant="gold" size="lg" className="w-full md:w-auto gap-2 group h-12 md:h-14">
+              Relatório Completo
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Button>
-            <div className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-slate-300">
-              <Calendar size={18} />
-              <span className="text-sm font-semibold">{new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <div className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-slate-300">
+              <Calendar size={16} className="md:size-[18px]" />
+              <span className="text-xs md:text-sm font-semibold">{new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -148,33 +147,29 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="premium-card group border-none">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={cn("p-3 rounded-2xl text-white shadow-lg", stat.color)}>
-                    <stat.icon size={20} />
+            <Card className="premium-card border-none group overflow-hidden">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex justify-between items-start mb-2 md:mb-4">
+                  <div className={cn("p-2 md:p-3 rounded-xl md:rounded-2xl text-white shadow-lg", stat.color)}>
+                    <stat.icon size={16} className="md:size-[20px]" />
                   </div>
-                  <button className="text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
-                    <MoreHorizontal size={20} />
-                  </button>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.title}</p>
-                  <h3 className="text-2xl font-black tracking-tight">
+                <div className="space-y-0.5 md:space-y-1">
+                  <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{stat.title}</p>
+                  <h3 className="text-lg md:text-2xl font-black tracking-tight truncate">
                     {typeof stat.value === "number" && (stat.title.includes("Receita") || stat.title.includes("Ticket"))
-                      ? formatCurrency(stat.value)
+                      ? formatCurrency(stat.value).replace(",00", "")
                       : stat.value}
                   </h3>
                 </div>
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-1.5 mt-2 md:mt-4 pt-2 md:pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div className={cn(
-                    "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black",
+                    "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] md:text-[10px] font-black",
                     stat.trend === "up" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
                   )}>
-                    {stat.trend === "up" ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                    {stat.trend === "up" ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                     {stat.change}
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">vs. último período</span>
                 </div>
               </CardContent>
             </Card>
@@ -183,28 +178,24 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Charts Section */}
-        <Card className="lg:col-span-8 border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[2rem] overflow-hidden">
-          <CardHeader className="p-8 pb-0">
-            <div className="flex justify-between items-end">
+        <Card className="lg:col-span-8 border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden">
+          <CardHeader className="p-6 md:p-8 pb-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
               <div>
-                <CardTitle className="text-2xl font-black tracking-tight">Performance Analítica</CardTitle>
-                <CardDescription className="text-sm font-medium">Fluxo de receita e gastos da última semana</CardDescription>
+                <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Performance Analítica</CardTitle>
+                <CardDescription className="text-xs md:text-sm font-medium">Faturamento da última semana</CardDescription>
               </div>
               <div className="flex gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gold-500/10 border border-gold-500/20 text-[10px] font-bold text-gold-600 uppercase">
-                  <div className="w-2 h-2 rounded-full bg-gold-500" />
+                <div className="flex items-center gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl bg-gold-500/10 border border-gold-500/20 text-[8px] md:text-[10px] font-bold text-gold-600 uppercase">
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-gold-500" />
                   Receita
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 uppercase">
-                  <div className="w-2 h-2 rounded-full bg-slate-400" />
-                  Gastos
                 </div>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="h-[400px] p-8">
+          <CardContent className="h-[300px] md:h-[400px] p-4 md:p-8">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={dynamicChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>

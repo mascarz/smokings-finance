@@ -97,21 +97,21 @@ export default function NotinhasPage() {
     .reduce((acc, curr) => acc + calculateTotal(curr.items), 0);
 
   return (
-    <div className="space-y-10 animate-in">
+    <div className="space-y-6 md:space-y-10 animate-in relative pb-20 md:pb-0">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-[10px] font-bold uppercase tracking-widest text-rose-600">
-            <FileText size={12} />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+        <div className="space-y-1 md:space-y-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-rose-600">
+            <FileText size={10} className="md:size-[12px]" />
             Controle de Fiados
           </div>
-          <h1 className="text-4xl font-black tracking-tight">Sistema de <span className="text-rose-500">Notinhas</span></h1>
-          <p className="text-slate-500 font-medium">Gerencie as pendências de clientes com total organização.</p>
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight">Sistema de <span className="text-rose-500">Notinhas</span></h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium">Gerencie as pendências de clientes com total organização.</p>
         </div>
         <Button 
           variant="premium" 
           size="lg"
-          className="rounded-2xl px-8 shadow-xl bg-slate-950 text-white group"
+          className="hidden md:flex rounded-2xl px-8 shadow-xl bg-slate-950 text-white group h-14"
           onClick={() => setIsModalOpen(true)}
         >
           <Plus size={20} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
@@ -119,73 +119,69 @@ export default function NotinhasPage() {
         </Button>
       </div>
 
+      {/* Floating Action Button for Mobile */}
+      <button 
+        onClick={() => setIsModalOpen(true)}
+        className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-rose-600 text-white shadow-2xl shadow-rose-500/40 z-40 flex items-center justify-center active:scale-95 transition-transform"
+      >
+        <Plus size={28} />
+      </button>
+
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="premium-card border-none bg-rose-500 text-white">
-          <CardContent className="p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70 mb-2">Total Pendente</p>
-            <h3 className="text-4xl font-black tracking-tighter">{formatCurrency(pendingTotal)}</h3>
-            <div className="mt-4 flex items-center gap-2 text-rose-100 text-xs font-bold">
-              <Clock size={14} />
-              Aguardando recebimento
-            </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+        <Card className="premium-card border-none bg-rose-500 text-white overflow-hidden">
+          <CardContent className="p-4 md:p-8">
+            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-white/70 mb-1 md:mb-2">Pendente</p>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter truncate">{formatCurrency(pendingTotal).replace(",00", "")}</h3>
           </CardContent>
         </Card>
-        <Card className="premium-card border-none bg-white dark:bg-slate-900 shadow-xl">
-          <CardContent className="p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Notinhas em Aberto</p>
-            <h3 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white">
+        <Card className="premium-card border-none bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
+          <CardContent className="p-4 md:p-8">
+            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 md:mb-2">Em Aberto</p>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-white truncate">
               {notinhas.filter(n => n.status === 'pendente').length}
             </h3>
-            <div className="mt-4 flex items-center gap-2 text-amber-500 text-xs font-bold">
-              <CalendarIcon size={14} />
-              Ativas no momento
-            </div>
           </CardContent>
         </Card>
-        <Card className="premium-card border-none bg-emerald-500 text-white">
-          <CardContent className="p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70 mb-2">Total Recebido</p>
-            <h3 className="text-4xl font-black tracking-tighter">{formatCurrency(receivedTotal)}</h3>
-            <div className="mt-4 flex items-center gap-2 text-emerald-100 text-xs font-bold">
-              <CheckCircle2 size={14} />
-              Já faturado
-            </div>
+        <Card className="premium-card border-none bg-emerald-500 text-white overflow-hidden col-span-2 sm:col-span-1">
+          <CardContent className="p-4 md:p-8">
+            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-white/70 mb-1 md:mb-2">Total Recebido</p>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter truncate">{formatCurrency(receivedTotal).replace(",00", "")}</h3>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+      <div className="flex flex-row gap-2 md:gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <Input 
-            placeholder="Buscar por nome do cliente..." 
-            className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm"
+            placeholder="Buscar cliente..." 
+            className="pl-10 md:pl-12 h-12 md:h-14 rounded-xl md:rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm text-sm md:text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="lg" className="h-14 rounded-2xl px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <Filter size={18} className="mr-2 text-slate-400" />
-          Filtros
+        <Button variant="outline" size="lg" className="h-12 md:h-14 rounded-xl md:rounded-2xl px-3 md:px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <Filter size={18} className="md:mr-2 text-slate-400" />
+          <span className="hidden md:inline">Filtros</span>
         </Button>
       </div>
 
       {/* Notinhas Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
         <AnimatePresence mode="popLayout">
           {filteredNotinhas.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="col-span-full py-20 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-900/20"
+              className="col-span-full py-12 md:py-20 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-900/20"
             >
-              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <FileText size={40} className="text-slate-300 dark:text-slate-600" />
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <FileText size={32} className="text-slate-300 dark:text-slate-600 md:size-[40px]" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">Nenhuma notinha</h3>
-              <p className="text-slate-500 max-w-xs mx-auto">Registre as vendas pendentes para melhor controle.</p>
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 mb-1 md:mb-2">Nenhuma notinha</h3>
+              <p className="text-xs md:text-sm text-slate-500 max-w-[200px] md:max-w-xs mx-auto">Registre as vendas pendentes para melhor controle.</p>
             </motion.div>
           ) : (
             filteredNotinhas.map((n, index) => (
@@ -198,31 +194,31 @@ export default function NotinhasPage() {
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
                 <Card className={cn(
-                  "premium-card border-none group overflow-hidden h-full flex flex-col transition-all duration-500",
+                  "premium-card border-none group overflow-hidden h-full flex flex-col transition-all duration-500 min-h-[320px]",
                   n.status === 'pago' ? 'opacity-50 grayscale hover:grayscale-0' : ''
                 )}>
-                  <CardHeader className="p-6 pb-4">
+                  <CardHeader className="p-4 md:p-6 pb-2 md:pb-4">
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 md:gap-4">
                         <div className={cn(
-                          "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
+                          "w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg transition-transform",
                           n.status === 'pendente' ? "bg-amber-500 text-white shadow-amber-500/20" : "bg-emerald-500 text-white shadow-emerald-500/20"
                         )}>
-                          <User size={24} />
+                          <User size={20} className="md:size-[24px]" />
                         </div>
-                        <div>
-                          <CardTitle className="text-xl font-black tracking-tight">{n.customerName}</CardTitle>
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                            <CalendarIcon size={12} />
-                            <CardDescription className="text-[10px] font-bold uppercase tracking-wider">
+                        <div className="min-w-0">
+                          <CardTitle className="text-lg md:text-xl font-black tracking-tight truncate max-w-[100px] md:max-w-none">{n.customerName}</CardTitle>
+                          <div className="flex items-center gap-1 text-slate-400">
+                            <CalendarIcon size={10} className="md:size-[12px]" />
+                            <CardDescription className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider">
                               {new Date(n.date).toLocaleDateString('pt-BR')}
                             </CardDescription>
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
                         <div className={cn(
-                          "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                          "px-2 py-0.5 rounded-full text-[7px] md:text-[9px] font-black uppercase tracking-widest",
                           n.status === 'pendente' ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500/10 text-emerald-600'
                         )}>
                           {n.status}
@@ -233,45 +229,45 @@ export default function NotinhasPage() {
                               setEditingNotinha(n);
                               setIsEditModalOpen(true);
                             }}
-                            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all opacity-0 group-hover:opacity-100"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all"
                           >
-                            <Edit size={16} />
+                            <Edit size={14} />
                           </button>
                         )}
                       </div>
                     </div>
                   </CardHeader>
 
-                  <CardContent className="p-6 pt-0 flex-1 flex flex-col gap-6">
-                    <div className="space-y-3 flex-1 overflow-y-auto max-h-[150px] pr-2 custom-scrollbar">
+                  <CardContent className="p-4 md:p-6 pt-0 flex-1 flex flex-col gap-4 md:gap-6">
+                    <div className="space-y-2 md:space-y-3 flex-1 overflow-y-auto max-h-[120px] md:max-h-[150px] pr-1 custom-scrollbar">
                       {n.items.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-6 opacity-40">
-                          <ShoppingBag size={24} className="mb-2" />
-                          <p className="text-[10px] font-black uppercase tracking-widest text-center">Nenhum item<br />registrado</p>
+                        <div className="flex flex-col items-center justify-center py-6 md:py-8 opacity-30">
+                          <ShoppingBag size={20} className="mb-1.5 md:size-[24px]" />
+                          <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-center">Nenhum item</p>
                         </div>
                       ) : (
                         n.items.map((item) => (
-                          <div key={item.productId} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                            <div className="flex-1">
-                              <p className="font-bold text-sm tracking-tight">{item.name}</p>
-                              <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">{formatCurrency(item.price)} cada</p>
+                          <div key={item.productId} className="flex items-center justify-between p-2.5 md:p-3 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                            <div className="flex-1 min-w-0 mr-2">
+                              <p className="font-bold text-xs md:text-sm tracking-tight truncate">{item.name}</p>
+                              <p className="text-[8px] md:text-[10px] font-black text-rose-600 uppercase tracking-widest">{formatCurrency(item.price).replace(",00", "")}</p>
                             </div>
-                            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <div className="flex items-center gap-2 md:gap-3 bg-white dark:bg-slate-900 p-1 md:p-1.5 rounded-lg md:rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                               {n.status === 'pendente' && (
                                 <button 
                                   onClick={() => updateNotinhaItem(n.id, item.productId, item.quantity - 1)}
-                                  className="text-slate-400 hover:text-rose-500 transition-colors"
+                                  className="text-slate-400 hover:text-rose-500 transition-colors p-0.5"
                                 >
-                                  <MinusCircle size={18} />
+                                  <MinusCircle size={16} className="md:size-[18px]" />
                                 </button>
                               )}
-                              <span className="text-sm font-black w-4 text-center">{item.quantity}</span>
+                              <span className="text-xs md:text-sm font-black w-3 md:w-4 text-center">{item.quantity}</span>
                               {n.status === 'pendente' && (
                                 <button 
                                   onClick={() => updateNotinhaItem(n.id, item.productId, item.quantity + 1)}
-                                  className="text-slate-400 hover:text-emerald-500 transition-colors"
+                                  className="text-slate-400 hover:text-emerald-500 transition-colors p-0.5"
                                 >
-                                  <PlusCircle size={18} />
+                                  <PlusCircle size={16} className="md:size-[18px]" />
                                 </button>
                               )}
                             </div>
@@ -280,36 +276,36 @@ export default function NotinhasPage() {
                       )}
                     </div>
 
-                    <div className="pt-6 border-t border-slate-100 dark:border-slate-800 mt-auto">
-                      <div className="flex items-center justify-between mb-6">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Total Pendente</span>
-                        <span className="text-3xl font-black tracking-tighter text-rose-600 dark:text-rose-500">
-                          {formatCurrency(calculateTotal(n.items))}
+                    <div className="pt-4 md:pt-6 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                      <div className="flex items-center justify-between mb-4 md:mb-6">
+                        <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total</span>
+                        <span className="text-xl md:text-3xl font-black tracking-tighter text-rose-600 dark:text-rose-500">
+                          {formatCurrency(calculateTotal(n.items)).replace(",00", "")}
                         </span>
                       </div>
                       
                       {n.status === 'pendente' && (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2 md:gap-3">
                           <Button 
                             variant="outline" 
                             size="lg"
-                            className="rounded-2xl h-14 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            className="rounded-xl md:rounded-2xl h-11 md:h-14 font-bold text-xs md:text-base border-slate-200 dark:border-slate-800"
                             onClick={() => {
                               setSelectedNotinha(n);
                               setIsItemsModalOpen(true);
                             }}
                           >
-                            <Plus size={18} className="mr-2" />
+                            <Plus size={16} className="mr-1.5 md:mr-2" />
                             Itens
                           </Button>
                           <Button 
                             variant="premium" 
                             size="lg"
-                            className="rounded-2xl h-14 font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20 border-none"
+                            className="rounded-xl md:rounded-2xl h-11 md:h-14 font-bold text-xs md:text-base bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20 border-none"
                             onClick={() => handlePay(n.id, n.customerName)}
                             disabled={n.items.length === 0}
                           >
-                            <CheckCircle2 size={18} className="mr-2" />
+                            <CheckCircle2 size={16} className="mr-1.5 md:mr-2" />
                             Pagar
                           </Button>
                         </div>

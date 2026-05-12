@@ -114,31 +114,32 @@ export default function FinanceiroPage() {
   };
 
   return (
-    <div className="space-y-10 animate-in">
+    <div className="space-y-6 md:space-y-10 animate-in">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950 dark:bg-white/10 border border-slate-950/10 dark:border-white/20 text-[10px] font-bold uppercase tracking-widest text-slate-950 dark:text-white">
-            <Globe size={12} />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+        <div className="space-y-1 md:space-y-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-950 dark:bg-white/10 border border-slate-950/10 dark:border-white/20 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-950 dark:text-white">
+            <Globe size={10} className="md:size-[12px]" />
             Enterprise Analytics
           </div>
-          <h1 className="text-4xl font-black tracking-tight">Análise <span className="gold-text-gradient">Financeira</span></h1>
-          <p className="text-slate-500 font-medium">Indicadores globais e inteligência de mercado para sua tabacaria.</p>
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight">Análise <span className="gold-text-gradient">Financeira</span></h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium">Indicadores globais e inteligência de mercado.</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" size="lg" className="rounded-2xl h-14 px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm" onClick={() => handleExport('excel')}>
-            <Download size={18} className="mr-2 text-slate-400" />
-            Excel
+        <div className="flex gap-2 md:gap-3">
+          <Button variant="outline" size="lg" className="flex-1 md:flex-none rounded-xl md:rounded-2xl h-12 md:h-14 px-4 md:px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm" onClick={() => handleExport('excel')}>
+            <Download size={18} className="md:mr-2 text-slate-400" />
+            <span className="hidden md:inline">Excel</span>
           </Button>
-          <Button variant="gold" size="lg" className="rounded-2xl h-14 px-8 shadow-xl shadow-gold-500/20" onClick={() => handleExport('pdf')}>
-            <Download size={18} className="mr-2" />
-            Exportar PDF
+          <Button variant="gold" size="lg" className="flex-1 md:flex-none rounded-xl md:rounded-2xl h-12 md:h-14 px-4 md:px-8 shadow-xl shadow-gold-500/20" onClick={() => handleExport('pdf')}>
+            <Download size={18} className="md:mr-2" />
+            <span className="hidden md:inline">Exportar PDF</span>
+            <span className="md:hidden">PDF</span>
           </Button>
         </div>
       </div>
 
       {/* High-Level Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -146,24 +147,23 @@ export default function FinanceiroPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="premium-card border-none group overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{stat.label}</p>
-                  <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
-                    <Activity size={16} />
+            <Card className="premium-card border-none group overflow-hidden h-full">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex justify-between items-start mb-2 md:mb-4">
+                  <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 truncate">{stat.label}</p>
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
+                    <Activity size={12} className="md:size-[16px]" />
                   </div>
                 </div>
-                <h3 className="text-2xl font-black tracking-tighter mb-2">{formatCurrency(stat.value)}</h3>
-                <div className="flex items-center gap-2">
+                <h3 className="text-base md:text-2xl font-black tracking-tighter mb-1 md:mb-2 truncate">{formatCurrency(stat.value).replace(",00", "")}</h3>
+                <div className="flex items-center gap-1.5">
                   <div className={cn(
-                    "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black",
+                    "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] md:text-[10px] font-black",
                     stat.trend === "up" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
                   )}>
-                    {stat.trend === "up" ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                    {stat.trend === "up" ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                     {stat.change}
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">YoY Growth</span>
                 </div>
               </CardContent>
             </Card>
@@ -172,110 +172,108 @@ export default function FinanceiroPage() {
       </div>
 
       {/* Main Insights Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Main Chart */}
-        <Card className="lg:col-span-8 border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[2rem] overflow-hidden">
-          <CardHeader className="p-8 pb-0">
-            <div className="flex justify-between items-end">
+        <Card className="lg:col-span-8 border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden">
+          <CardHeader className="p-6 md:p-8 pb-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
               <div>
-                <CardTitle className="text-2xl font-black tracking-tight leading-none mb-2">Fluxo de Caixa</CardTitle>
-                <CardDescription className="text-sm font-medium">Monitoramento mensal de performance financeira</CardDescription>
+                <CardTitle className="text-xl md:text-2xl font-black tracking-tight leading-none mb-1 md:mb-2">Fluxo de Caixa</CardTitle>
+                <CardDescription className="text-xs md:text-sm font-medium">Performance mensal</CardDescription>
               </div>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gold-500" />
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Receita</span>
+              <div className="flex gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-gold-500" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Receita</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-slate-900 dark:bg-white" />
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Gastos</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-slate-900 dark:bg-white" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Gastos</span>
                 </div>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="h-[450px] p-8">
+          <CardContent className="h-[300px] md:h-[450px] p-4 md:p-8">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dynamicMonthlyData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={dynamicMonthlyData} margin={{ top: 20, right: 0, left: -25, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
                   dy={10}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
                   tickFormatter={(v) => `R$${v/1000}k`}
                 />
                 <Tooltip 
-                  cursor={{ fill: 'rgba(0,0,0,0.02)', radius: 10 }}
+                  cursor={{ fill: 'rgba(0,0,0,0.02)', radius: 6 }}
                   contentStyle={{ 
                     backgroundColor: 'rgba(15, 23, 42, 0.95)', 
                     backdropFilter: 'blur(10px)',
                     border: 'none', 
-                    borderRadius: '1.5rem',
-                    padding: '1.25rem',
+                    borderRadius: '1rem',
+                    padding: '0.75rem',
                     boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.5)'
                   }}
-                  itemStyle={{ fontWeight: 800, fontSize: '12px', padding: '2px 0' }}
-                  labelStyle={{ fontWeight: 900, color: '#f5b10a', marginBottom: '0.75rem', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                  itemStyle={{ fontWeight: 800, fontSize: '10px' }}
+                  labelStyle={{ fontWeight: 900, color: '#f5b10a', marginBottom: '0.5rem', fontSize: '12px' }}
                 />
-                <Bar dataKey="receita" fill="#f5b10a" radius={[8, 8, 0, 0]} barSize={32} />
-                <Bar dataKey="despesa" fill="currentColor" className="text-slate-950 dark:text-white" radius={[8, 8, 0, 0]} barSize={32} />
+                <Bar dataKey="receita" fill="#f5b10a" radius={[4, 4, 0, 0]} barSize={24} />
+                <Bar dataKey="despesa" fill="currentColor" className="text-slate-950 dark:text-white" radius={[4, 4, 0, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
         {/* Secondary Insights */}
-        <div className="lg:col-span-4 space-y-8">
+        <div className="lg:col-span-4 space-y-6 md:space-y-8">
           {/* Pie Chart Card */}
-          <Card className="border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[2rem] overflow-hidden">
-            <CardHeader className="p-8 pb-4 text-center">
-              <CardTitle className="text-xl font-black tracking-tight uppercase tracking-[0.1em]">Mix de Receita</CardTitle>
+          <Card className="border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden">
+            <CardHeader className="p-6 md:p-8 pb-2 text-center">
+              <CardTitle className="text-lg md:text-xl font-black tracking-tight uppercase">Mix de Receita</CardTitle>
             </CardHeader>
-            <CardContent className="px-8 pb-8 flex flex-col items-center">
-              <div className="w-full h-[240px] relative">
+            <CardContent className="px-6 md:px-8 pb-6 md:pb-8 flex flex-col items-center">
+              <div className="w-full h-[180px] md:h-[240px] relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={dynamicCategoryData}
-                      innerRadius={65}
-                      outerRadius={95}
-                      paddingAngle={8}
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={5}
                       dataKey="value"
-                      animationDuration={1500}
                     >
                       {dynamicCategoryData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '1rem', border: 'none', fontWeight: 800 }}
-                    />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</span>
-                  <span className="text-2xl font-black tracking-tighter leading-none">{formatCurrency(totalRevenue).split(',')[0]}</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase">Total</span>
+                  <span className="text-xl font-black tracking-tighter">{formatCurrency(totalRevenue).split(',')[0]}</span>
                 </div>
               </div>
-              <div className="w-full space-y-3 mt-4">
+              <div className="w-full space-y-2 mt-4">
                 {dynamicCategoryData.map((cat) => (
-                  <div key={cat.name} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="text-xs font-black text-slate-500 uppercase tracking-tight">{cat.name}</span>
+                  <div key={cat.name} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                      <span className="text-[10px] font-black text-slate-500 uppercase">{cat.name}</span>
                     </div>
-                    <span className="text-xs font-black tracking-tighter">{Math.round((cat.value / (totalRevenue || 1)) * 100)}%</span>
+                    <span className="text-[10px] font-black">{Math.round((cat.value / (totalRevenue || 1)) * 100)}%</span>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
 
           {/* Call to action card */}
           <Card className="border-none bg-gradient-to-br from-gold-400 to-gold-600 rounded-[2rem] text-white p-8 relative overflow-hidden group cursor-pointer shadow-xl shadow-gold-500/20">
