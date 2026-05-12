@@ -16,6 +16,28 @@ interface Sale {
   quantity: number;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+}
+
+interface ComandaItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface Comanda {
+  id: string;
+  customerName: string;
+  items: ComandaItem[];
+  status: 'aberta' | 'paga';
+  date: string;
+}
+
 interface Notinha {
   id: string;
   customerName: string;
@@ -29,13 +51,23 @@ interface AppContextType {
   user: User | null;
   sales: Sale[];
   notinhas: Notinha[];
+  products: Product[];
+  comandas: Comanda[];
   employees: any[];
   expenses: any[];
   customers: any[];
   login: (userData: User) => void;
   logout: () => void;
   addSale: (sale: Omit<Sale, 'id' | 'date'>) => void;
+  addProduct: (product: Omit<Product, 'id'>) => void;
+  updateProduct: (id: string, product: Partial<Product>) => void;
+  deleteProduct: (id: string) => void;
+  addComanda: (comanda: Omit<Comanda, 'id' | 'date' | 'status' | 'items'>) => void;
+  addItemToComanda: (comandaId: string, item: ComandaItem) => void;
+  updateComandaItem: (comandaId: string, productId: string, quantity: number) => void;
+  payComanda: (id: string) => void;
   addNotinha: (notinha: Omit<Notinha, 'id' | 'date' | 'status'>) => void;
+  updateNotinha: (id: string, notinha: Partial<Notinha>) => void;
   payNotinha: (id: string) => void;
   addEmployee: (employee: any) => void;
   addExpense: (expense: any) => void;
@@ -49,6 +81,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
   const [notinhas, setNotinhas] = useState<Notinha[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [comandas, setComandas] = useState<Comanda[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
@@ -59,38 +93,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const savedUser = localStorage.getItem("smokings_user");
       if (savedUser) setUser(JSON.parse(savedUser));
       
-      const savedSales = localStorage.getItem("smokings_sales");
-      if (savedSales) setSales(JSON.parse(savedSales));
-      
-      const savedNotinhas = localStorage.getItem("smokings_notinhas");
-      if (savedNotinhas) setNotinhas(JSON.parse(savedNotinhas));
-      
-      const savedEmployees = localStorage.getItem("smokings_employees");
-      if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-      
-      const savedExpenses = localStorage.getItem("smokings_expenses");
-      if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
-      
-      const savedCustomers = localStorage.getItem("smokings_customers");
-      if (savedCustomers) setCustomers(JSON.parse(savedCustomers));
+      setSales(JSON.parse(localStorage.getItem("smokings_sales") || "[]"));
+      setNotinhas(JSON.parse(localStorage.getItem("smokings_notinhas") || "[]"));
+      setProducts(JSON.parse(localStorage.getItem("smokings_products") || "[]"));
+      setComandas(JSON.parse(localStorage.getItem("smokings_comandas") || "[]"));
+      setEmployees(JSON.parse(localStorage.getItem("smokings_employees") || "[]"));
+      setExpenses(JSON.parse(localStorage.getItem("smokings_expenses") || "[]"));
+      setCustomers(JSON.parse(localStorage.getItem("smokings_customers") || "[]"));
     }
   }, []);
 
-  // Salvar dados sempre que mudarem (independente de estar logado)
+  // Salvar dados sempre que mudarem
   useEffect(() => {
     if (typeof window !== "undefined") {
       if (user) localStorage.setItem("smokings_user", JSON.stringify(user));
       localStorage.setItem("smokings_sales", JSON.stringify(sales));
       localStorage.setItem("smokings_notinhas", JSON.stringify(notinhas));
+      localStorage.setItem("smokings_products", JSON.stringify(products));
+      localStorage.setItem("smokings_comandas", JSON.stringify(comandas));
       localStorage.setItem("smokings_employees", JSON.stringify(employees));
       localStorage.setItem("smokings_expenses", JSON.stringify(expenses));
       localStorage.setItem("smokings_customers", JSON.stringify(customers));
     }
-  }, [user, sales, notinhas, employees, expenses, customers]);
+  }, [user, sales, notinhas, products, comandas, employees, expenses, customers]);
 
   const login = (userData: User) => {
     setUser(userData);
-    // Se for um novo usuário (simulado pelo registro), os estados já estarão vazios
   };
 
   const logout = () => {
@@ -101,6 +129,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const clearAllData = () => {
     setSales([]);
     setNotinhas([]);
+    setProducts([]);
+    setComandas([]);
     setEmployees([]);
     setExpenses([]);
     setCustomers([]);
@@ -115,6 +145,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSales(prev => [newSale, ...prev]);
   };
 
+  // Funções de Produtos
+  const addProduct = (productData: Omit<Product, 'id'>) => {
+    const newProduct: Product = {
+      ...productData,
+      id: Math.random().toString(36).substr(2, 9),
+    };
+    setProducts(prev => [newProduct, ...prev]);
+  };
+
+  const updateProduct = (id: string, productUpdate: Partial<Product>) => {
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...productUpdate } : p));
+  };
+
+  const deleteProduct = (id: string) => {
+    setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  // Funções de Comandas
+  const addComanda = (comandaData: Omit<Comanda, 'id' | 'date' | 'status' | 'items'>) => {
+    const newComanda: Comanda = {
+      ...comandaData,
+      id: Math.random().toString(36).substr(2, 9),
+      date: new Date().toISOString(),
+      status: 'aberta',
+      items: []
+    };
+    setComandas(prev => [newComanda, ...prev]);
+  };
+
+  const addItemToComanda = (comandaId: string, item: ComandaItem) => {
+    setComandas(prev => prev.map(c => {
+      if (c.id === comandaId) {
+        const existingItem = c.items.find(i => i.productId === item.productId);
+        if (existingItem) {
+          return {
+            ...c,
+            items: c.items.map(i => i.productId === item.productId 
+              ? { ...i, quantity: i.quantity + item.quantity } 
+              : i)
+          };
+        }
+        return { ...c, items: [...c.items, item] };
+      }
+      return c;
+    }));
+  };
+
+  const updateComandaItem = (comandaId: string, productId: string, quantity: number) => {
+    setComandas(prev => prev.map(c => {
+      if (c.id === comandaId) {
+        if (quantity <= 0) {
+          return { ...c, items: c.items.filter(i => i.productId !== productId) };
+        }
+        return {
+          ...c,
+          items: c.items.map(i => i.productId === productId ? { ...i, quantity } : i)
+        };
+      }
+      return c;
+    }));
+  };
+
+  const payComanda = (id: string) => {
+    const comanda = comandas.find(c => c.id === id);
+    if (comanda && comanda.status === 'aberta') {
+      // Adicionar cada item ao faturamento (sales)
+      comanda.items.forEach(item => {
+        addSale({
+          product: item.name,
+          amount: item.price,
+          quantity: item.quantity
+        });
+      });
+      setComandas(prev => prev.map(c => c.id === id ? { ...c, status: 'paga' } : c));
+    }
+  };
+
+  // Funções de Notinhas
   const addNotinha = (notinhaData: Omit<Notinha, 'id' | 'date' | 'status'>) => {
     const newNotinha: Notinha = {
       ...notinhaData,
@@ -125,8 +233,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setNotinhas(prev => [newNotinha, ...prev]);
   };
 
+  const updateNotinha = (id: string, notinhaUpdate: Partial<Notinha>) => {
+    setNotinhas(prev => prev.map(n => n.id === id ? { ...n, ...notinhaUpdate } : n));
+  };
+
   const payNotinha = (id: string) => {
-    setNotinhas(prev => prev.map(n => n.id === id ? { ...n, status: 'pago' } : n));
+    const notinha = notinhas.find(n => n.id === id);
+    if (notinha && notinha.status === 'pendente') {
+      // Adicionar ao faturamento
+      addSale({
+        product: `Notinha: ${notinha.product} (${notinha.customerName})`,
+        amount: notinha.price,
+        quantity: 1
+      });
+      setNotinhas(prev => prev.map(n => n.id === id ? { ...n, status: 'pago' } : n));
+    }
   };
 
   const addEmployee = (emp: any) => setEmployees(prev => [emp, ...prev]);
@@ -135,8 +256,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{ 
-      user, sales, notinhas, employees, expenses, customers,
-      login, logout, addSale, addNotinha, payNotinha, 
+      user, sales, notinhas, products, comandas, employees, expenses, customers,
+      login, logout, addSale, 
+      addProduct, updateProduct, deleteProduct,
+      addComanda, addItemToComanda, updateComandaItem, payComanda,
+      addNotinha, updateNotinha, payNotinha, 
       addEmployee, addExpense, addCustomer, clearAllData 
     }}>
       {children}

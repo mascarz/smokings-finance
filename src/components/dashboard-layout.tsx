@@ -68,8 +68,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const menuItems = [
     { href: "/dashboard", icon: Home, label: "Início" },
+    { href: "/dashboard/comandas", icon: ClipboardList, label: "Comandas" },
     { href: "/dashboard/vendas", icon: ShoppingBag, label: "Vendas" },
     { href: "/dashboard/notinhas", icon: FileText, label: "Notinhas" },
+    { href: "/dashboard/inventario", icon: Package, label: "Produtos" },
     { href: "/dashboard/financeiro", icon: BarChart3, label: "Financeiro" },
     { href: "/dashboard/gastos", icon: DollarSign, label: "Gastos" },
     { href: "/dashboard/crm", icon: Users, label: "Clientes" },
@@ -183,5 +185,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 
-// Add Zap icon import
-import { Zap } from "lucide-react";
+// Add icons import
+import { Zap, ClipboardList, Package } from "lucide-react";
