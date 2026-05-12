@@ -17,7 +17,16 @@ import {
   UserCircle,
   Bell,
   ShoppingBag,
-  FileText
+  FileText,
+  Zap, 
+  ClipboardList, 
+  Package, 
+  Info, 
+  CheckCircle, 
+  AlertTriangle, 
+  XCircle, 
+  Trash2, 
+  Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -76,7 +85,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/vendas", icon: ShoppingBag, label: "Vendas" },
     { href: "/dashboard/notinhas", icon: FileText, label: "Notinhas" },
     { href: "/dashboard/inventario", icon: Package, label: "Inventário" },
-    { href: "/dashboard/financeiro", icon: BarChart3, label: "Relatórios" },
+    { href: "/dashboard/relatorio", icon: FileText, label: "Relatório Completo" },
+    { href: "/dashboard/financeiro", icon: BarChart3, label: "Financeiro" },
     { href: "/dashboard/gastos", icon: DollarSign, label: "Gastos" },
     { href: "/dashboard/crm", icon: Users, label: "Clientes" },
     { href: "/dashboard/funcionarios", icon: Briefcase, label: "Equipe" },
@@ -84,8 +94,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 mb-10 px-2 py-4">
+    <div className="flex flex-col h-full overflow-y-auto no-scrollbar">
+      <div className="flex items-center gap-3 mb-10 px-2 py-4 shrink-0">
         <div className="w-10 h-10 rounded-2xl bg-gold-500 flex items-center justify-center shadow-lg shadow-gold-500/20">
           <ShoppingBag className="text-white" size={20} />
         </div>
@@ -183,10 +193,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex items-center gap-2 md:gap-6">
             <div className="flex items-center gap-1 md:gap-2">
-              <Button variant="ghost" size="icon" className="w-9 h-9 md:w-10 md:h-10 rounded-xl relative hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Bell size={18} className="text-slate-500 md:size-[20px]" />
-                <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full border-2 border-background"></span>
-              </Button>
+              <NotificationCenter />
               <ThemeToggle />
             </div>
             
@@ -211,5 +218,112 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 
-// Add icons import
-import { Zap, ClipboardList, Package } from "lucide-react";
+function NotificationCenter() {
+  const { notifications, markNotificationAsRead, clearNotifications } = useApp();
+  const [isOpen, setIsOpen] = useState(false);
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'success': return <CheckCircle className="text-emerald-500" size={16} />;
+      case 'warning': return <AlertTriangle className="text-amber-500" size={16} />;
+      case 'error': return <XCircle className="text-rose-500" size={16} />;
+      default: return <Info className="text-blue-500" size={16} />;
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="w-9 h-9 md:w-10 md:h-10 rounded-xl relative hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <Bell size={18} className="text-slate-500 md:size-[20px]" />
+        {unreadCount > 0 && (
+          <span className="absolute top-2 right-2 w-4 h-4 bg-rose-500 text-white text-[8px] font-black rounded-full border-2 border-background flex items-center justify-center">
+            {unreadCount}
+          </span>
+        )}
+      </Button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="absolute right-0 mt-2 w-[320px] md:w-[400px] bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden"
+            >
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className="text-slate-400" />
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">Notificações</span>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500"
+                  onClick={clearNotifications}
+                >
+                  Limpar Tudo
+                </Button>
+              </div>
+
+              <div className="max-h-[400px] overflow-y-auto no-scrollbar">
+                {notifications.length === 0 ? (
+                  <div className="p-10 text-center space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-300">
+                      <Bell size={24} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-400">Nenhuma notificação nova</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    {notifications.map((notif) => (
+                      <div 
+                        key={notif.id} 
+                        className={cn(
+                          "p-4 transition-colors relative group",
+                          !notif.read ? "bg-slate-50/50 dark:bg-slate-800/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20"
+                        )}
+                        onClick={() => markNotificationAsRead(notif.id)}
+                      >
+                        <div className="flex gap-3">
+                          <div className="mt-1">{getTypeIcon(notif.type)}</div>
+                          <div className="space-y-1 flex-1">
+                            <p className={cn("text-xs font-black tracking-tight", !notif.read ? "text-slate-900 dark:text-white" : "text-slate-500")}>
+                              {notif.title}
+                            </p>
+                            <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
+                              {notif.message}
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter">
+                              {new Date(notif.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          {!notif.read && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 self-center" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {notifications.length > 0 && (
+                <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-800/50">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Suas notificações são salvas localmente</span>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

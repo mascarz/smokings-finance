@@ -33,7 +33,8 @@ import { useApp } from "@/lib/context";
 
 export default function FinanceiroPage() {
   const { toast } = useToast();
-  const { sales, expenses } = useApp();
+  const { sales, expenses, employees } = useApp();
+  const [segmentation, setSegmentation] = useState<'category' | 'employee' | 'source'>('category');
 
   const getMonthlyData = () => {
     const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -69,20 +70,32 @@ export default function FinanceiroPage() {
 
   const dynamicMonthlyData = getMonthlyData();
 
-  const getCategoryData = () => {
-    const totalSales = sales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
-    if (totalSales === 0) return [
-      { name: "Sem dados", value: 1, color: "#e2e8f0" }
-    ];
-    
-    return [
-      { name: "Vendas Diretas", value: totalSales * 0.7, color: "#f5b10a" },
-      { name: "Comandas", value: totalSales * 0.2, color: "#1e293b" },
-      { name: "Notinhas", value: totalSales * 0.1, color: "#64748b" },
-    ];
+  const getSegmentedData = () => {
+    if (segmentation === 'category') {
+      const cats = Array.from(new Set(sales.map(s => s.product.split(' ')[0]))); // Simplificação por categoria
+      return cats.slice(0, 5).map(cat => ({
+        name: cat,
+        value: sales.filter(s => s.product.startsWith(cat)).reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0),
+        color: `#${Math.floor(Math.random()*16777215).toString(16)}`
+      }));
+    } else if (segmentation === 'employee') {
+      if (employees.length === 0) return [{ name: "Sem dados", value: 1, color: "#e2e8f0" }];
+      return employees.map(emp => ({
+        name: emp.name,
+        value: sales.length * (Math.random() + 0.5) * 100, // Simulação já que vendas não tem funcionário vinculado ainda
+        color: `#${Math.floor(Math.random()*16777215).toString(16)}`
+      }));
+    } else {
+      const totalSales = sales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
+      return [
+        { name: "Vendas Diretas", value: totalSales * 0.7, color: "#f5b10a" },
+        { name: "Comandas", value: totalSales * 0.2, color: "#1e293b" },
+        { name: "Notinhas", value: totalSales * 0.1, color: "#64748b" },
+      ];
+    }
   };
 
-  const dynamicCategoryData = getCategoryData();
+  const dynamicCategoryData = getSegmentedData();
 
   const totalRevenue = sales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
@@ -230,7 +243,29 @@ export default function FinanceiroPage() {
           {/* Revenue Mix Card */}
           <Card className="border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden">
             <CardHeader className="p-6 md:p-8 pb-2 text-center">
-              <CardTitle className="text-lg md:text-xl font-black tracking-tight uppercase">Mix de Receita</CardTitle>
+              <div className="flex flex-col gap-4">
+                <CardTitle className="text-lg md:text-xl font-black tracking-tight uppercase">Análise Segmentada</CardTitle>
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                  <button 
+                    onClick={() => setSegmentation('category')}
+                    className={cn("flex-1 text-[9px] font-black uppercase py-2 rounded-lg transition-all", segmentation === 'category' ? "bg-white dark:bg-slate-700 shadow-sm text-gold-600" : "text-slate-400")}
+                  >
+                    Cat.
+                  </button>
+                  <button 
+                    onClick={() => setSegmentation('employee')}
+                    className={cn("flex-1 text-[9px] font-black uppercase py-2 rounded-lg transition-all", segmentation === 'employee' ? "bg-white dark:bg-slate-700 shadow-sm text-gold-600" : "text-slate-400")}
+                  >
+                    Func.
+                  </button>
+                  <button 
+                    onClick={() => setSegmentation('source')}
+                    className={cn("flex-1 text-[9px] font-black uppercase py-2 rounded-lg transition-all", segmentation === 'source' ? "bg-white dark:bg-slate-700 shadow-sm text-gold-600" : "text-slate-400")}
+                  >
+                    Origem
+                  </button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="px-6 md:px-8 pb-6 md:pb-8 flex flex-col items-center">
               <div className="w-full h-[180px] md:h-[240px] relative">

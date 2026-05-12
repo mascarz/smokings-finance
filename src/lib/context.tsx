@@ -8,6 +8,15 @@ interface User {
   isOwner: boolean;
 }
 
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  date: string;
+  read: boolean;
+}
+
 interface Sale {
   id: string;
   product: string;
@@ -62,6 +71,7 @@ interface AppContextType {
   employees: any[];
   expenses: any[];
   customers: any[];
+  notifications: Notification[];
   login: (userData: User) => void;
   logout: () => void;
   addSale: (sale: Omit<Sale, 'id' | 'date'>) => void;
@@ -79,8 +89,12 @@ interface AppContextType {
   updateNotinha: (id: string, notinha: Partial<Notinha>) => void;
   payNotinha: (id: string) => void;
   addEmployee: (employee: any) => void;
+  updateEmployeePermissions: (email: string, permissions: string[]) => void;
   addExpense: (expense: any) => void;
   addCustomer: (customer: any) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'date' | 'read'>) => void;
+  markNotificationAsRead: (id: string) => void;
+  clearNotifications: () => void;
   clearAllData: () => void;
 }
 
@@ -95,6 +109,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [employees, setEmployees] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Carregar dados do localStorage ao iniciar
   useEffect(() => {
@@ -109,6 +124,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setEmployees(JSON.parse(localStorage.getItem("smokings_employees") || "[]"));
       setExpenses(JSON.parse(localStorage.getItem("smokings_expenses") || "[]"));
       setCustomers(JSON.parse(localStorage.getItem("smokings_customers") || "[]"));
+      setNotifications(JSON.parse(localStorage.getItem("smokings_notifications") || "[]"));
     }
   }, []);
 
@@ -123,8 +139,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("smokings_employees", JSON.stringify(employees));
       localStorage.setItem("smokings_expenses", JSON.stringify(expenses));
       localStorage.setItem("smokings_customers", JSON.stringify(customers));
+      localStorage.setItem("smokings_notifications", JSON.stringify(notifications));
     }
-  }, [user, sales, notinhas, products, comandas, employees, expenses, customers]);
+  }, [user, sales, notinhas, products, comandas, employees, expenses, customers, notifications]);
 
   const login = (userData: User) => {
     setUser(userData);
@@ -143,6 +160,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setEmployees([]);
     setExpenses([]);
     setCustomers([]);
+    setNotifications([]);
+  };
+
+  const addNotification = (notifData: Omit<Notification, 'id' | 'date' | 'read'>) => {
+    const newNotif: Notification = {
+      ...notifData,
+      id: Math.random().toString(36).substr(2, 9),
+      date: new Date().toISOString(),
+      read: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
   };
 
   const addSale = (saleData: Omit<Sale, 'id' | 'date'>) => {
@@ -152,6 +188,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       date: new Date().toISOString(),
     };
     setSales(prev => [newSale, ...prev]);
+    
+    // Notificação automática de venda
+    addNotification({
+      title: "Nova Venda",
+      message: `${saleData.quantity}x ${saleData.product} faturado com sucesso.`,
+      type: "success"
+    });
   };
 
   // Funções de Produtos
@@ -228,6 +271,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       });
       setComandas(prev => prev.map(c => c.id === id ? { ...c, status: 'paga' } : c));
+      
+      addNotification({
+        title: "Comanda Paga",
+        message: `Comanda de ${comanda.customerName} finalizada.`,
+        type: "success"
+      });
     }
   };
 
@@ -296,21 +345,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       });
       setNotinhas(prev => prev.map(n => n.id === id ? { ...n, status: 'pago' } : n));
+
+      addNotification({
+        title: "Notinha Paga",
+        message: `Notinha de ${notinha.customerName} paga com sucesso.`,
+        type: "success"
+      });
     }
   };
 
-  const addEmployee = (emp: any) => setEmployees(prev => [emp, ...prev]);
-  const addExpense = (exp: any) => setExpenses(prev => [exp, ...prev]);
+  const addEmployee = (emp: any) => {
+    setEmployees(prev => [emp, ...prev]);
+    addNotification({
+      title: "Novo Funcionário",
+      message: `${emp.name} adicionado à equipe.`,
+      type: "info"
+    });
+  };
+
+  const updateEmployeePermissions = (email: string, permissions: string[]) => {
+    setEmployees(prev => prev.map(emp => emp.email === email ? { ...emp, permissions } : emp));
+    addNotification({
+      title: "Permissões Atualizadas",
+      message: `As permissões para ${email} foram modificadas.`,
+      type: "warning"
+    });
+  };
+
+  const addExpense = (exp: any) => {
+    setExpenses(prev => [exp, ...prev]);
+    addNotification({
+      title: "Nova Despesa",
+      message: `Gasto de ${exp.amount} registrado em ${exp.category}.`,
+      type: "warning"
+    });
+  };
+
   const addCustomer = (cust: any) => setCustomers(prev => [cust, ...prev]);
 
   return (
     <AppContext.Provider value={{ 
-      user, sales, notinhas, products, comandas, employees, expenses, customers,
+      user, sales, notinhas, products, comandas, employees, expenses, customers, notifications,
       login, logout, addSale, 
       addProduct, updateProduct, deleteProduct,
-        addComanda, addItemToComanda, updateComandaItem, payComanda, updateComanda,
-        addNotinha, addItemToNotinha, updateNotinhaItem, updateNotinha, payNotinha, 
-      addEmployee, addExpense, addCustomer, clearAllData 
+      addComanda, addItemToComanda, updateComandaItem, payComanda, updateComanda,
+      addNotinha, addItemToNotinha, updateNotinhaItem, updateNotinha, payNotinha, 
+      addEmployee, updateEmployeePermissions, addExpense, addCustomer,
+      addNotification, markNotificationAsRead, clearNotifications, clearAllData 
     }}>
       {children}
     </AppContext.Provider>
@@ -319,6 +400,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 export function useApp() {
   const context = useContext(AppContext);
-  if (!context) throw new Error("useApp must be used within AppProvider");
+  if (context === undefined) {
+    throw new Error("useApp must be used within an AppProvider");
+  }
   return context;
 }

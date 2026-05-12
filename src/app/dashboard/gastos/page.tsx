@@ -15,114 +15,177 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn, filterByDateRange } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 
 import { useApp } from "@/lib/context";
 
 export default function GastosPage() {
-  const { expenses: contextExpenses, addExpense } = useApp();
-  const [expenses, setExpenses] = useState(contextExpenses.length > 0 ? contextExpenses : []);
+  const { expenses, addExpense } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
-
-  // Sincronizar com context
-  React.useEffect(() => {
-    if (contextExpenses.length > 0) {
-      setExpenses(contextExpenses);
-    }
-  }, [contextExpenses]);
+  const [dateFilter, setDateFilter] = useState<number | 'today' | 'all'>(30);
 
   const [newExpense, setNewExpense] = useState({
     description: "",
     amount: "",
-    category: "Estoque",
+    category: "",
     vendor: "",
   });
 
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
+  const activeCategories = Array.from(new Set(expenses.map(e => e.category)));
+  const [categories, setCategories] = useState(activeCategories.length > 0 ? activeCategories : ["Estoque", "Infraestrutura", "Contas Fixas", "Marketing"]);
+
+  // Atualizar categorias quando as despesas mudarem
+  React.useEffect(() => {
+    const currentCats = Array.from(new Set(expenses.map(e => e.category)));
+    setCategories(prev => Array.from(new Set([...prev, ...currentCats])));
+  }, [expenses]);
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim() && !categories.includes(newCategoryName.trim())) {
+      setCategories([...categories, newCategoryName.trim()]);
+      setNewExpense({ ...newExpense, category: newCategoryName.trim() });
+      setNewCategoryName("");
+      setIsAddingCategory(false);
+      toast("Nova categoria adicionada!");
+    }
+  };
+
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = (expenses.length + 1).toString();
     const expenseToAdd = {
       ...newExpense,
-      id,
+      id: (expenses.length + 1).toString(),
       amount: parseFloat(newExpense.amount),
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString(),
       status: "Pago",
     };
     addExpense(expenseToAdd);
-    setExpenses([expenseToAdd, ...expenses]);
     setIsModalOpen(false);
-    setNewExpense({ description: "", amount: "", category: "Estoque", vendor: "" });
+    setNewExpense({ description: "", amount: "", category: "", vendor: "" });
     toast("Despesa registrada com sucesso!");
   };
 
-  const filteredExpenses = expenses.filter(exp => 
+  const filteredByDate = dateFilter === 'all' ? expenses : filterByDateRange(expenses, dateFilter);
+
+  const filteredExpenses = filteredByDate.filter(exp => 
     exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     exp.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     exp.vendor.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalAmount = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-  const pendingAmount = expenses.filter(e => e.status === "Pendente").reduce((acc, curr) => acc + curr.amount, 0);
+  const totalAmount = filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const pendingAmount = filteredExpenses.filter(e => e.status === "Pendente").reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Controle de Gastos</h1>
-          <p className="text-muted-foreground">Gerencie todas as saídas e despesas do seu negócio.</p>
+    <div className="space-y-6 md:space-y-10 animate-in relative pb-20 md:pb-0">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+        <div className="space-y-1 md:space-y-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-rose-600">
+            <DollarSign size={10} className="md:size-[12px]" />
+            Saídas de Caixa
+          </div>
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight">Controle de <span className="text-rose-600">Gastos</span></h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium">Gerencie todas as saídas e despesas do seu negócio.</p>
         </div>
         <Button 
           variant="premium" 
-          className="flex items-center gap-2"
+          size="lg"
+          className="hidden md:flex rounded-2xl px-8 shadow-xl bg-slate-950 text-white group h-14"
           onClick={() => setIsModalOpen(true)}
         >
-          <Plus size={18} />
+          <Plus size={20} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
           Registrar Gasto
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-rose-500/5 border-rose-500/10">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-rose-600 font-bold uppercase text-[10px]">Total de Gastos (Mês)</CardDescription>
-            <CardTitle className="text-3xl font-bold text-rose-600">{formatCurrency(totalAmount)}</CardTitle>
-          </CardHeader>
+      <button 
+        onClick={() => setIsModalOpen(true)}
+        className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-rose-600 text-white shadow-2xl shadow-rose-500/40 z-40 flex items-center justify-center active:scale-95 transition-transform"
+      >
+        <Plus size={28} />
+      </button>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+        <Card className="premium-card border-none bg-rose-600 text-white shadow-xl shadow-rose-500/20 overflow-hidden">
+          <CardContent className="p-4 md:p-8">
+            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-rose-100/70 mb-1 md:mb-2">Total de Gastos ({dateFilter === 'all' ? 'Total' : `${dateFilter} dias`})</p>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter truncate">{formatCurrency(totalAmount).replace(",00", "")}</h3>
+          </CardContent>
         </Card>
-        <Card className="bg-amber-500/5 border-amber-500/10">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-amber-600 font-bold uppercase text-[10px]">Pendentes de Pagamento</CardDescription>
-            <CardTitle className="text-3xl font-bold text-amber-600">{formatCurrency(pendingAmount)}</CardTitle>
-          </CardHeader>
+        <Card className="premium-card border-none bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
+          <CardContent className="p-4 md:p-8">
+            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 md:mb-2">Pendentes</p>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter text-rose-600 dark:text-rose-500 truncate">{formatCurrency(pendingAmount).replace(",00", "")}</h3>
+          </CardContent>
         </Card>
-        <Card className="bg-primary/5 border-primary/10">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-primary/60 font-bold uppercase text-[10px]">Categorias Ativas</CardDescription>
-            <CardTitle className="text-3xl font-bold">12</CardTitle>
-          </CardHeader>
+        <Card className="premium-card border-none bg-white dark:bg-slate-900 shadow-xl overflow-hidden col-span-2 md:col-span-1">
+          <CardContent className="p-4 md:p-8">
+            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 md:mb-2">Categorias Ativas</p>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-white truncate">{activeCategories.length}</h3>
+          </CardContent>
         </Card>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+      <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <Input 
-            placeholder="Buscar despesa, categoria ou fornecedor..." 
-            className="pl-10"
+            placeholder="Buscar despesa ou categoria..." 
+            className="pl-10 md:pl-12 h-12 md:h-14 rounded-xl md:rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm text-sm md:text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={() => toast("Filtros avançados em breve!", "info")}
-        >
-          <Filter size={18} /> Filtros Avançados
-        </Button>
+
+        <div className="flex gap-2 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
+          <Button 
+            variant={dateFilter === 'today' ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter('today')}
+          >
+            Hoje
+          </Button>
+          <Button 
+            variant={dateFilter === 7 ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter(7)}
+          >
+            7 dias
+          </Button>
+          <Button 
+            variant={dateFilter === 14 ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter(14)}
+          >
+            14 dias
+          </Button>
+          <Button 
+            variant={dateFilter === 30 ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter(30)}
+          >
+            30 dias
+          </Button>
+          <Button 
+            variant={dateFilter === 'all' ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter('all')}
+          >
+            Tudo
+          </Button>
+        </div>
       </div>
 
       <Card className="border-none shadow-xl overflow-hidden">

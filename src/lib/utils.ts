@@ -19,3 +19,18 @@ export function formatPercent(value: number) {
     maximumFractionDigits: 1,
   }).format(value / 100);
 }
+
+export function filterByDateRange(items: any[], days: number | 'today') {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return items.filter(item => {
+    const itemDate = new Date(item.date);
+    if (days === 'today') {
+      return itemDate >= today;
+    }
+    const rangeDate = new Date();
+    rangeDate.setDate(now.getDate() - days);
+    return itemDate >= rangeDate;
+  });
+}

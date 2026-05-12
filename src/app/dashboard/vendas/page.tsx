@@ -22,13 +22,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { useApp } from "@/lib/context";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, filterByDateRange } from "@/lib/utils";
+import { exportToExcel } from "@/lib/export-utils";
 
 export default function VendasPage() {
   const { sales, addSale } = useApp();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState<number | 'today' | 'all'>(30);
 
   const [newSale, setNewSale] = useState({
     product: "",
@@ -48,12 +50,30 @@ export default function VendasPage() {
     toast("Venda registrada com sucesso!", "success");
   };
 
-  const filteredSales = sales.filter(sale => 
+  const handleExportExcel = () => {
+    if (sales.length === 0) {
+      toast("Não há vendas para exportar.", "warning");
+      return;
+    }
+    const dataToExport = sales.map(s => ({
+      Produto: s.product,
+      Quantidade: s.quantity,
+      'Preço Unitário': formatCurrency(s.amount),
+      Total: formatCurrency(s.amount * s.quantity),
+      Data: new Date(s.date).toLocaleString('pt-BR')
+    }));
+    exportToExcel("Historico_de_Vendas_Smokings", dataToExport);
+    toast("Histórico exportado com sucesso!");
+  };
+
+  const filteredByDate = dateFilter === 'all' ? sales : filterByDateRange(sales, dateFilter);
+
+  const filteredSales = filteredByDate.filter(sale => 
     sale.product.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalRevenue = sales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
-  const totalItems = sales.reduce((acc, curr) => acc + curr.quantity, 0);
+  const totalRevenue = filteredSales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
+  const totalItems = filteredSales.reduce((acc, curr) => acc + curr.quantity, 0);
 
   return (
     <div className="space-y-6 md:space-y-10 animate-in relative pb-20 md:pb-0">
@@ -68,9 +88,9 @@ export default function VendasPage() {
           <p className="text-xs md:text-sm text-slate-500 font-medium">Monitore cada transação e o crescimento do seu faturamento.</p>
         </div>
         <div className="hidden md:flex gap-3">
-          <Button variant="outline" size="lg" className="rounded-2xl px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm h-14">
+          <Button variant="outline" size="lg" className="rounded-2xl px-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm h-14" onClick={handleExportExcel}>
             <Download size={18} className="mr-2 text-slate-400" />
-            Exportar
+            Excel
           </Button>
           <Button 
             variant="premium" 
@@ -96,7 +116,7 @@ export default function VendasPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
         <Card className="premium-card border-none bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 overflow-hidden">
           <CardContent className="p-4 md:p-8">
-            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-emerald-100/70 mb-1 md:mb-2">Faturamento</p>
+            <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-emerald-100/70 mb-1 md:mb-2">Faturamento ({dateFilter === 'all' ? 'Total' : `${dateFilter} dias`})</p>
             <h3 className="text-xl md:text-4xl font-black tracking-tighter truncate">{formatCurrency(totalRevenue).replace(",00", "")}</h3>
           </CardContent>
         </Card>
@@ -109,14 +129,14 @@ export default function VendasPage() {
         <Card className="premium-card border-none bg-white dark:bg-slate-900 shadow-xl overflow-hidden col-span-2 md:col-span-1">
           <CardContent className="p-4 md:p-8">
             <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 md:mb-2">Transações</p>
-            <h3 className="text-xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-white truncate">{sales.length}</h3>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-white truncate">{filteredSales.length}</h3>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters & Search */}
-      <div className="flex flex-row gap-2 md:gap-4 items-center">
-        <div className="relative flex-1">
+      {/* Filters & Search Row */}
+      <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <Input 
             placeholder="Buscar venda..." 
@@ -125,10 +145,49 @@ export default function VendasPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="lg" className="h-12 md:h-14 rounded-xl md:rounded-2xl px-3 md:px-6 bg-white dark:bg-slate-900 shadow-sm">
-          <Filter size={18} className="md:mr-2 text-slate-400" />
-          <span className="hidden md:inline">Filtros</span>
-        </Button>
+        
+        <div className="flex gap-2 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
+          <Button 
+            variant={dateFilter === 'today' ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter('today')}
+          >
+            Hoje
+          </Button>
+          <Button 
+            variant={dateFilter === 7 ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter(7)}
+          >
+            7 dias
+          </Button>
+          <Button 
+            variant={dateFilter === 14 ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter(14)}
+          >
+            14 dias
+          </Button>
+          <Button 
+            variant={dateFilter === 30 ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter(30)}
+          >
+            30 dias
+          </Button>
+          <Button 
+            variant={dateFilter === 'all' ? 'premium' : 'outline'} 
+            size="sm" 
+            className="rounded-xl h-10 px-4 whitespace-nowrap"
+            onClick={() => setDateFilter('all')}
+          >
+            Tudo
+          </Button>
+        </div>
       </div>
 
       {/* Desktop Table View */}

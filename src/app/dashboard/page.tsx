@@ -31,6 +31,7 @@ import { useToast } from "@/components/ui/toast";
 import { useApp } from "@/lib/context";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -293,9 +294,11 @@ export default function DashboardPage() {
                       Notamos que <span className="font-black text-white underline">4 novos clientes</span> não retornaram esta semana. Que tal criar uma promoção para "Comandas" ativas?
                     </p>
                   </div>
-                  <Button variant="premium" className="w-full h-14 rounded-2xl bg-slate-950 text-white border-none mt-4 font-bold tracking-tight">
-                    Ver Todos os Insights
-                  </Button>
+                  <Link href="/dashboard/ai" className="w-full">
+                    <Button variant="premium" className="w-full h-14 rounded-2xl bg-slate-950 text-white border-none mt-4 font-bold tracking-tight">
+                      Ver Todos os Insights
+                    </Button>
+                  </Link>
                 </>
               ) : (
                 <div className="p-10 text-center border-2 border-dashed border-white/30 rounded-3xl">
