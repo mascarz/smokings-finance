@@ -38,11 +38,17 @@ interface Comanda {
   date: string;
 }
 
+interface NotinhaItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
 interface Notinha {
   id: string;
   customerName: string;
-  product: string;
-  price: number;
+  items: NotinhaItem[];
   date: string;
   status: 'pendente' | 'pago';
 }
@@ -66,7 +72,10 @@ interface AppContextType {
   addItemToComanda: (comandaId: string, item: ComandaItem) => void;
   updateComandaItem: (comandaId: string, productId: string, quantity: number) => void;
   payComanda: (id: string) => void;
-  addNotinha: (notinha: Omit<Notinha, 'id' | 'date' | 'status'>) => void;
+  updateComanda: (id: string, comanda: Partial<Comanda>) => void;
+  addNotinha: (notinha: Omit<Notinha, 'id' | 'date' | 'status' | 'items'>) => void;
+  addItemToNotinha: (notinhaId: string, item: NotinhaItem) => void;
+  updateNotinhaItem: (notinhaId: string, productId: string, quantity: number) => void;
   updateNotinha: (id: string, notinha: Partial<Notinha>) => void;
   payNotinha: (id: string) => void;
   addEmployee: (employee: any) => void;
@@ -222,15 +231,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateComanda = (id: string, comandaUpdate: Partial<Comanda>) => {
+    setComandas(prev => prev.map(c => c.id === id ? { ...c, ...comandaUpdate } : c));
+  };
+
   // Funções de Notinhas
-  const addNotinha = (notinhaData: Omit<Notinha, 'id' | 'date' | 'status'>) => {
+  const addNotinha = (notinhaData: Omit<Notinha, 'id' | 'date' | 'status' | 'items'>) => {
     const newNotinha: Notinha = {
       ...notinhaData,
       id: Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString(),
       status: 'pendente',
+      items: []
     };
     setNotinhas(prev => [newNotinha, ...prev]);
+  };
+
+  const addItemToNotinha = (notinhaId: string, item: NotinhaItem) => {
+    setNotinhas(prev => prev.map(n => {
+      if (n.id === notinhaId) {
+        const existingItem = n.items.find(i => i.productId === item.productId);
+        if (existingItem) {
+          return {
+            ...n,
+            items: n.items.map(i => i.productId === item.productId 
+              ? { ...i, quantity: i.quantity + item.quantity } 
+              : i)
+          };
+        }
+        return { ...n, items: [...n.items, item] };
+      }
+      return n;
+    }));
+  };
+
+  const updateNotinhaItem = (notinhaId: string, productId: string, quantity: number) => {
+    setNotinhas(prev => prev.map(n => {
+      if (n.id === notinhaId) {
+        if (quantity <= 0) {
+          return { ...n, items: n.items.filter(i => i.productId !== productId) };
+        }
+        return {
+          ...n,
+          items: n.items.map(i => i.productId === productId ? { ...i, quantity } : i)
+        };
+      }
+      return n;
+    }));
   };
 
   const updateNotinha = (id: string, notinhaUpdate: Partial<Notinha>) => {
@@ -240,11 +287,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const payNotinha = (id: string) => {
     const notinha = notinhas.find(n => n.id === id);
     if (notinha && notinha.status === 'pendente') {
-      // Adicionar ao faturamento
-      addSale({
-        product: `Notinha: ${notinha.product} (${notinha.customerName})`,
-        amount: notinha.price,
-        quantity: 1
+      // Adicionar cada item ao faturamento
+      notinha.items.forEach(item => {
+        addSale({
+          product: `Notinha: ${item.name} (${notinha.customerName})`,
+          amount: item.price,
+          quantity: item.quantity
+        });
       });
       setNotinhas(prev => prev.map(n => n.id === id ? { ...n, status: 'pago' } : n));
     }
@@ -259,8 +308,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       user, sales, notinhas, products, comandas, employees, expenses, customers,
       login, logout, addSale, 
       addProduct, updateProduct, deleteProduct,
-      addComanda, addItemToComanda, updateComandaItem, payComanda,
-      addNotinha, updateNotinha, payNotinha, 
+        addComanda, addItemToComanda, updateComandaItem, payComanda, updateComanda,
+        addNotinha, addItemToNotinha, updateNotinhaItem, updateNotinha, payNotinha, 
       addEmployee, addExpense, addCustomer, clearAllData 
     }}>
       {children}

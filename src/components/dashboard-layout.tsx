@@ -38,14 +38,17 @@ function SidebarItem({ href, icon: Icon, label, active }: SidebarItemProps) {
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+        "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
         active 
-          ? "bg-primary text-primary-foreground shadow-md" 
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          ? "bg-slate-950 dark:bg-white text-white dark:text-slate-950 shadow-xl shadow-slate-200 dark:shadow-black/20" 
+          : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200"
       )}
     >
-      <Icon size={20} className={cn("transition-transform duration-200 group-hover:scale-110", active ? "text-primary-foreground" : "text-muted-foreground")} />
-      <span className="font-medium">{label}</span>
+      <Icon size={20} className={cn("transition-all duration-300 group-hover:scale-110", active ? "text-inherit" : "text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200")} />
+      <span className="font-semibold text-sm tracking-tight">{label}</span>
+      {active && (
+        <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-gold-500 animate-pulse" />
+      )}
     </Link>
   );
 }
@@ -67,28 +70,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const menuItems = [
-    { href: "/dashboard", icon: Home, label: "Início" },
+    { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/dashboard/comandas", icon: ClipboardList, label: "Comandas" },
     { href: "/dashboard/vendas", icon: ShoppingBag, label: "Vendas" },
     { href: "/dashboard/notinhas", icon: FileText, label: "Notinhas" },
-    { href: "/dashboard/inventario", icon: Package, label: "Produtos" },
-    { href: "/dashboard/financeiro", icon: BarChart3, label: "Financeiro" },
+    { href: "/dashboard/inventario", icon: Package, label: "Inventário" },
+    { href: "/dashboard/financeiro", icon: BarChart3, label: "Relatórios" },
     { href: "/dashboard/gastos", icon: DollarSign, label: "Gastos" },
     { href: "/dashboard/crm", icon: Users, label: "Clientes" },
-    { href: "/dashboard/funcionarios", icon: Briefcase, label: "Funcionários" },
-    { href: "/dashboard/ai", icon: Zap, label: "IA Financeira" },
+    { href: "/dashboard/funcionarios", icon: Briefcase, label: "Equipe" },
+    { href: "/dashboard/ai", icon: Zap, label: "Inteligência IA" },
   ];
 
   const SidebarContent = () => (
-    <>
-      <div className="flex items-center gap-2 mb-10 px-2">
-        <div className="w-8 h-8 rounded-lg bg-black dark:bg-white flex items-center justify-center">
-          <span className="text-white dark:text-black font-bold">S</span>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 mb-10 px-2 py-4">
+        <div className="w-10 h-10 rounded-2xl bg-gold-500 flex items-center justify-center shadow-lg shadow-gold-500/20">
+          <ShoppingBag className="text-white" size={20} />
         </div>
-        <span className="font-bold text-lg tracking-tight">SMOKINGS</span>
+        <div className="flex flex-col">
+          <span className="font-black text-xl tracking-tighter leading-none">SMOKINGS</span>
+          <span className="text-[10px] font-bold text-gold-600 tracking-[0.2em] uppercase">Premium Admin</span>
+        </div>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-2">
+      <nav className="flex-1 flex flex-col gap-1.5">
+        <p className="px-4 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menu Principal</p>
         {menuItems.map((item) => (
           <div key={item.href} onClick={() => setIsSidebarOpen(false)}>
             <SidebarItem 
@@ -99,64 +106,73 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ))}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-border">
+      <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <p className="px-4 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configurações</p>
         <div onClick={() => setIsSidebarOpen(false)}>
           <SidebarItem href="/dashboard/perfil" icon={UserCircle} label="Meu Perfil" active={pathname === "/dashboard/perfil"} />
         </div>
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-all duration-200 group w-full text-left"
+          className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-300 group w-full text-left"
         >
           <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
-          <span className="font-medium">Sair</span>
+          <span className="font-semibold text-sm tracking-tight">Sair da Conta</span>
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="flex min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-gold-500/30">
       {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-72 border-r border-border p-6 fixed inset-y-0">
+      <aside className="hidden lg:flex flex-col w-72 border-r border-slate-200 dark:border-slate-800 p-6 fixed inset-y-0 bg-white dark:bg-slate-950/50 backdrop-blur-xl z-40">
         <SidebarContent />
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-72 flex flex-col w-full min-w-0">
         {/* Header */}
-        <header className="h-20 border-b border-border px-4 md:px-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
+        <header className="h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-xl z-30 border-b border-slate-200/50 dark:border-slate-800/50">
           <div className="flex items-center gap-4">
             <button 
-              className="lg:hidden p-2 hover:bg-accent rounded-lg"
+              className="lg:hidden p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm"
               onClick={() => setIsSidebarOpen(true)}
             >
-              <Menu size={24} />
+              <Menu size={20} />
             </button>
 
-            <div className="hidden sm:block lg:hidden">
-              <span className="font-bold text-lg tracking-tight">SMOKINGS</span>
-            </div>
-
-            <div className="hidden lg:block">
-              <h2 className="text-sm font-medium text-muted-foreground">Bem-vindo de volta,</h2>
-              <h1 className="text-xl font-bold">{user?.name || "Dono da Tabacaria"}</h1>
+            <div className="lg:block">
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Gestão de Tabacaria</h2>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black tracking-tight">{user?.name || "Premium User"}</h1>
+                <div className="px-2 py-0.5 rounded-md bg-gold-500/10 text-gold-600 text-[10px] font-bold uppercase tracking-wider">Proprietário</div>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
-            <Button variant="ghost" size="icon" className="rounded-full relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-gold-500 rounded-full"></span>
-            </Button>
-            <ThemeToggle />
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-secondary flex items-center justify-center border border-border">
-              <UserCircle size={20} className="md:size-24" />
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="hidden sm:flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="rounded-xl relative hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <Bell size={20} className="text-slate-500" />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-background"></span>
+              </Button>
+              <ThemeToggle />
+            </div>
+            
+            <div className="flex items-center gap-3 pl-3 md:pl-6 border-l border-slate-200 dark:border-slate-800">
+              <div className="flex flex-col items-end hidden xs:flex">
+                <span className="text-sm font-bold tracking-tight leading-none">{user?.name || "Admin"}</span>
+                <span className="text-[10px] text-slate-400 font-medium">Online agora</span>
+              </div>
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-inner overflow-hidden">
+                <UserCircle size={24} className="text-slate-400" />
+              </div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="p-4 md:p-6 lg:p-10 flex-1 w-full max-w-[100vw] overflow-x-hidden">
+        <main className="p-4 md:p-8 lg:p-12 flex-1 w-full max-w-7xl mx-auto overflow-x-hidden animate-in">
           {children}
         </main>
       </div>
