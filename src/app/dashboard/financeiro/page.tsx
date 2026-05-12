@@ -3,20 +3,14 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { 
-  BarChart3, 
   TrendingUp, 
   TrendingDown, 
   Download, 
-  Filter, 
-  Calendar,
-  DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
-  PieChart as PieIcon,
+  Globe,
   Activity,
   ChevronRight,
   Zap,
-  Globe
+  Users
 } from "lucide-react";
 import { 
   BarChart, 
@@ -26,8 +20,6 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
-  AreaChart, 
-  Area,
   PieChart,
   Cell,
   Pie
@@ -45,7 +37,6 @@ export default function FinanceiroPage() {
 
   const getMonthlyData = () => {
     const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    const currentYear = new Date().getFullYear();
     const data = [];
 
     for (let i = 5; i >= 0; i--) {
@@ -80,7 +71,9 @@ export default function FinanceiroPage() {
 
   const getCategoryData = () => {
     const totalSales = sales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
-    if (totalSales === 0) return [];
+    if (totalSales === 0) return [
+      { name: "Sem dados", value: 1, color: "#e2e8f0" }
+    ];
     
     return [
       { name: "Vendas Diretas", value: totalSales * 0.7, color: "#f5b10a" },
@@ -108,6 +101,8 @@ export default function FinanceiroPage() {
       if (format === 'pdf') {
         const columns = ["Mês", "Receita", "Despesa"];
         exportToPDF("Relatório Financeiro Global - Smokings", dynamicMonthlyData, columns);
+      } else {
+        exportToExcel("Relatório Financeiro Global - Smokings", dynamicMonthlyData);
       }
       toast(`Relatório exportado com sucesso!`, "success");
     }, 1500);
@@ -138,7 +133,7 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
-      {/* High-Level Stats */}
+      {/* High-Level Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {stats.map((stat, i) => (
           <motion.div
@@ -171,15 +166,15 @@ export default function FinanceiroPage() {
         ))}
       </div>
 
-      {/* Main Insights Row */}
+      {/* Main Analysis Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-        {/* Main Chart */}
+        {/* Chart Card */}
         <Card className="lg:col-span-8 border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden">
           <CardHeader className="p-6 md:p-8 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
               <div>
                 <CardTitle className="text-xl md:text-2xl font-black tracking-tight leading-none mb-1 md:mb-2">Fluxo de Caixa</CardTitle>
-                <CardDescription className="text-xs md:text-sm font-medium">Performance mensal</CardDescription>
+                <CardDescription className="text-xs md:text-sm font-medium">Performance mensal consolidada</CardDescription>
               </div>
               <div className="flex gap-3">
                 <div className="flex items-center gap-1.5">
@@ -230,9 +225,9 @@ export default function FinanceiroPage() {
           </CardContent>
         </Card>
 
-        {/* Secondary Insights */}
+        {/* Sidebar Insights */}
         <div className="lg:col-span-4 space-y-6 md:space-y-8">
-          {/* Pie Chart Card */}
+          {/* Revenue Mix Card */}
           <Card className="border-none premium-shadow bg-white dark:bg-slate-900/50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden">
             <CardHeader className="p-6 md:p-8 pb-2 text-center">
               <CardTitle className="text-lg md:text-xl font-black tracking-tight uppercase">Mix de Receita</CardTitle>
@@ -272,23 +267,21 @@ export default function FinanceiroPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
 
-          {/* Call to action card */}
-          <Card className="border-none bg-gradient-to-br from-gold-400 to-gold-600 rounded-[2rem] text-white p-8 relative overflow-hidden group cursor-pointer shadow-xl shadow-gold-500/20">
+          {/* AI Insights Card */}
+          <Card className="border-none bg-gradient-to-br from-gold-400 to-gold-600 rounded-[1.5rem] md:rounded-[2rem] text-white p-6 md:p-8 relative overflow-hidden group cursor-pointer shadow-xl shadow-gold-500/20">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-3xl -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
             <div className="relative z-10 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
-                <Zap size={24} className="fill-white" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                <Zap size={20} className="fill-white md:size-[24px]" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-xl font-black tracking-tight">Otimização de Lucro</h4>
-                <p className="text-white/80 text-xs font-bold leading-relaxed">
-                  Nossa IA identificou uma oportunidade de reduzir custos em 15% nas reposições.
+                <h4 className="text-lg md:text-xl font-black tracking-tight">Otimização de Lucro</h4>
+                <p className="text-white/80 text-[10px] md:text-xs font-bold leading-relaxed">
+                  IA identificou oportunidade de redução de custos em 15%.
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:translate-x-2 transition-transform">
+              <div className="flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] group-hover:translate-x-2 transition-transform">
                 Ver recomendação <ChevronRight size={14} />
               </div>
             </div>
@@ -297,35 +290,35 @@ export default function FinanceiroPage() {
       </div>
 
       {/* Global Benchmarking Section */}
-      <Card className="border-none shadow-2xl bg-slate-950 text-white rounded-[2.5rem] p-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          <div className="space-y-4">
+      <Card className="border-none shadow-2xl bg-slate-950 text-white rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/10 rounded-full blur-[100px] md:blur-[120px] -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+          <div className="space-y-2 md:space-y-4">
             <div className="flex items-center gap-2 text-emerald-400">
-              <Activity size={20} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Health Score</span>
+              <Activity size={16} className="md:size-[20px]" />
+              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]">Health Score</span>
             </div>
-            <h5 className="text-4xl font-black tracking-tighter">98.2<span className="text-xl text-white/40">/100</span></h5>
-            <p className="text-white/50 text-xs font-medium leading-relaxed">Seu negócio está operando em nível de eficiência global AAA.</p>
+            <h5 className="text-3xl md:text-4xl font-black tracking-tighter">98.2<span className="text-lg md:text-xl text-white/40">/100</span></h5>
+            <p className="text-white/50 text-[10px] md:text-xs font-medium leading-relaxed">Eficiência global AAA.</p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="flex items-center gap-2 text-gold-400">
-              <TrendingUp size={20} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Crescimento Real</span>
+              <TrendingUp size={16} className="md:size-[20px]" />
+              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]">Crescimento</span>
             </div>
-            <h5 className="text-4xl font-black tracking-tighter">+24.5%</h5>
-            <p className="text-white/50 text-xs font-medium leading-relaxed">Aumento consistente no faturamento líquido ajustado.</p>
+            <h5 className="text-3xl md:text-4xl font-black tracking-tighter">+24.5%</h5>
+            <p className="text-white/50 text-[10px] md:text-xs font-medium leading-relaxed">Faturamento líquido ajustado.</p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="flex items-center gap-2 text-blue-400">
-              <Users size={20} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Retenção LTV</span>
+              <Users size={16} className="md:size-[20px]" />
+              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]">Retenção</span>
             </div>
-            <h5 className="text-4xl font-black tracking-tighter">8.4x</h5>
-            <p className="text-white/50 text-xs font-medium leading-relaxed">Cada cliente retorna em média 8 vezes no ciclo trimestral.</p>
+            <h5 className="text-3xl md:text-4xl font-black tracking-tighter">8.4x</h5>
+            <p className="text-white/50 text-[10px] md:text-xs font-medium leading-relaxed">Frequência trimestral.</p>
           </div>
           <div className="flex items-center justify-center lg:justify-end">
-            <Button variant="premium" size="lg" className="h-16 px-10 rounded-[1.5rem] bg-white text-slate-950 hover:bg-slate-100 font-black tracking-tight shadow-xl">
+            <Button variant="premium" size="lg" className="w-full sm:w-auto h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-[1.5rem] bg-white text-slate-950 hover:bg-slate-100 font-black tracking-tight shadow-xl">
               Configurar Alertas
             </Button>
           </div>
