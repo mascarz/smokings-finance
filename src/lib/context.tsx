@@ -7,6 +7,7 @@ interface User {
   email: string;
   isOwner: boolean;
   ownerEmail?: string; // E-mail do dono desta conta (se for funcionário)
+  permissions?: string[]; // Permissões do funcionário
 }
 
 interface Notification {
@@ -391,17 +392,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addEmployee = (emp: any) => {
-    setEmployees(prev => [emp, ...prev]);
+    const normalizedEmail = emp.email.toLowerCase().trim();
+    const newEmp = { ...emp, email: normalizedEmail };
+    setEmployees(prev => [newEmp, ...prev]);
     
     // Registrar funcionário no sistema global para permitir login
     if (typeof window !== "undefined" && user) {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-      registry[emp.email] = {
+      registry[normalizedEmail] = {
         name: emp.name,
-        email: emp.email,
+        email: normalizedEmail,
         password: "123", // Senha padrão para novos funcionários
         isOwner: false,
-        ownerEmail: user.email // Vincula ao dono atual
+        ownerEmail: user.email, // Vincula ao dono atual
+        permissions: emp.permissions || []
       };
       localStorage.setItem("smokings_registry", JSON.stringify(registry));
     }
@@ -417,7 +421,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const employeeToDelete = employees.find(e => e.id === id);
     if (employeeToDelete && typeof window !== "undefined") {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-      delete registry[employeeToDelete.email];
+      const normalizedEmail = employeeToDelete.email.toLowerCase().trim();
+      delete registry[normalizedEmail];
       localStorage.setItem("smokings_registry", JSON.stringify(registry));
     }
     setEmployees(prev => prev.filter(emp => emp.id !== id));
@@ -431,20 +436,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const registerUser = (userData: any) => {
     if (typeof window !== "undefined") {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-      registry[userData.email] = {
+      const normalizedEmail = userData.email.toLowerCase().trim();
+      registry[normalizedEmail] = {
         ...userData,
+        email: normalizedEmail,
         isOwner: true,
-        ownerEmail: userData.email
+        ownerEmail: normalizedEmail
       };
       localStorage.setItem("smokings_registry", JSON.stringify(registry));
     }
   };
 
   const updateEmployeePermissions = (email: string, permissions: string[]) => {
-    setEmployees(prev => prev.map(emp => emp.email === email ? { ...emp, permissions } : emp));
+    const normalizedEmail = email.toLowerCase().trim();
+    setEmployees(prev => prev.map(emp => emp.email === normalizedEmail ? { ...emp, permissions } : emp));
+    
+    // Atualizar no registro global para refletir no login
+    if (typeof window !== "undefined") {
+      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+      if (registry[normalizedEmail]) {
+        registry[normalizedEmail].permissions = permissions;
+        localStorage.setItem("smokings_registry", JSON.stringify(registry));
+      }
+    }
+
     addNotification({
       title: "Permissões Atualizadas",
-      message: `As permissões para ${email} foram modificadas.`,
+      message: `As permissões para ${normalizedEmail} foram modificadas.`,
       type: "warning"
     });
   };

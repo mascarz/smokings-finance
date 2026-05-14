@@ -89,18 +89,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const menuItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/dashboard/comandas", icon: ClipboardList, label: "Comandas" },
-    { href: "/dashboard/vendas", icon: ShoppingBag, label: "Vendas" },
-    { href: "/dashboard/notinhas", icon: FileText, label: "Notinhas" },
-    { href: "/dashboard/inventario", icon: Package, label: "Inventário" },
-    { href: "/dashboard/relatorio", icon: FileText, label: "Relatório Completo" },
-    { href: "/dashboard/financeiro", icon: BarChart3, label: "Financeiro" },
-    { href: "/dashboard/gastos", icon: DollarSign, label: "Gastos" },
-    { href: "/dashboard/crm", icon: Users, label: "Clientes" },
-    { href: "/dashboard/funcionarios", icon: Briefcase, label: "Equipe" },
-    { href: "/dashboard/ai", icon: Zap, label: "Inteligência IA" },
+    { href: "/dashboard", icon: Home, label: "Dashboard", permission: "public" },
+    { href: "/dashboard/comandas", icon: ClipboardList, label: "Comandas", permission: "vendas" },
+    { href: "/dashboard/vendas", icon: ShoppingBag, label: "Vendas", permission: "vendas" },
+    { href: "/dashboard/notinhas", icon: FileText, label: "Notinhas", permission: "vendas" },
+    { href: "/dashboard/inventario", icon: Package, label: "Inventário", permission: "produtos" },
+    { href: "/dashboard/relatorio", icon: FileText, label: "Relatório Completo", permission: "financeiro" },
+    { href: "/dashboard/financeiro", icon: BarChart3, label: "Financeiro", permission: "financeiro" },
+    { href: "/dashboard/gastos", icon: DollarSign, label: "Gastos", permission: "gastos" },
+    { href: "/dashboard/crm", icon: Users, label: "Clientes", permission: "crm" },
+    { href: "/dashboard/funcionarios", icon: Briefcase, label: "Equipe", permission: "funcionarios" },
+    { href: "/dashboard/ai", icon: Zap, label: "Inteligência IA", permission: "financeiro" },
   ];
+
+  const filteredMenuItems = menuItems.filter(item => {
+    if (user?.isOwner) return true;
+    if (item.permission === "public") return true;
+    return user?.permissions?.includes(item.permission);
+  });
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full overflow-y-auto no-scrollbar">
@@ -121,7 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <nav className="flex-1 flex flex-col gap-1.5">
         <p className="px-4 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menu Principal</p>
-        {menuItems.map((item) => (
+        {filteredMenuItems.map((item) => (
           <div key={item.href} onClick={() => setIsSidebarOpen(false)}>
             <SidebarItem 
               {...item} 

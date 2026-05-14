@@ -77,7 +77,7 @@ export default function FuncionariosPage() {
       ...newEmployee,
       id,
       status: "Ativo",
-      permissions: ["visualizar", "vender"],
+      permissions: ["vendas"], // Permissão padrão: apenas realizar vendas
     };
     addEmployee(employeeToAdd);
     setIsModalOpen(false);

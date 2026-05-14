@@ -28,14 +28,17 @@ export default function LoginPage() {
     // Simular delay de rede
     setTimeout(() => {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-      const userFound = registry[email];
+      // Normalizar email para evitar erros de caixa alta/baixa
+      const normalizedEmail = email.toLowerCase().trim();
+      const userFound = registry[normalizedEmail];
 
       if (userFound && userFound.password === password) {
         login({
           name: userFound.name,
           email: userFound.email,
           isOwner: userFound.isOwner,
-          ownerEmail: userFound.ownerEmail
+          ownerEmail: userFound.ownerEmail,
+          permissions: userFound.permissions || []
         });
         setIsLoading(false);
         toast(`Bem-vindo, ${userFound.name}!`);
