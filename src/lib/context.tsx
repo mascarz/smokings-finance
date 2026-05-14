@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "./supabase";
 
 interface User {
   name: string;
@@ -170,6 +171,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setExpenses(JSON.parse(localStorage.getItem(`smokings_expenses_${ownerPrefix}`) || "[]"));
       setCustomers(JSON.parse(localStorage.getItem(`smokings_customers_${ownerPrefix}`) || "[]"));
       setNotifications(JSON.parse(localStorage.getItem(`smokings_notifications_${ownerPrefix}`) || "[]"));
+      
+      // Sincronizar com Supabase se houver conexão
+      syncWithSupabase(ownerPrefix);
+    }
+  };
+
+  const syncWithSupabase = async (ownerEmail: string) => {
+    try {
+      // Tentar buscar registros de usuários (funcionários) do Supabase
+      const { data, error } = await supabase
+        .from('smokings_registry')
+        .select('*')
+        .eq('ownerEmail', ownerEmail);
+
+      if (data && !error) {
+        const localRegistry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+        data.forEach(reg => {
+          localRegistry[reg.email] = reg;
+        });
+        localStorage.setItem("smokings_registry", JSON.stringify(localRegistry));
+      }
+    } catch (err) {
+      console.warn("Erro ao sincronizar com Supabase:", err);
     }
   };
 
@@ -406,7 +430,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Registrar funcionário no sistema global (localStorage) para permitir login
     if (typeof window !== "undefined" && user) {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-      registry[normalizedEmail] = {
+      const employeeData = {
         name: emp.name,
         email: normalizedEmail,
         password: "123", // Senha padrão obrigatória
@@ -414,7 +438,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ownerEmail: user.email.toLowerCase().trim(), // Vincula ao e-mail do dono atual
         permissions: permissions
       };
+      registry[normalizedEmail] = employeeData;
       localStorage.setItem("smokings_registry", JSON.stringify(registry));
+      
+      // Salvar no Supabase para acesso em outros aparelhos
+      saveToSupabaseRegistry(employeeData);
       
       // DEBUG: Mostrar no console para conferência
       console.log("Funcionário registrado no sistema:", registry[normalizedEmail]);
@@ -425,6 +453,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       message: `${emp.name} cadastrado. Login: ${normalizedEmail} | Senha: 123`,
       type: "info"
     });
+  };
+
+  const saveToSupabaseRegistry = async (userData: any) => {
+    try {
+      await supabase.from('smokings_registry').upsert([userData]);
+    } catch (err) {
+      console.warn("Erro ao salvar no Supabase (verifique se a tabela existe):", err);
+    }
   };
 
   const deleteEmployee = (id: string) => {
