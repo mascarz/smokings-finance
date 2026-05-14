@@ -26,35 +26,72 @@ export default function LoginPage() {
     toast("Autenticando...", "info");
     
     // Simular delay de rede
-    setTimeout(() => {
-      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+    setTimeout(async () => {
       const normalizedEmail = email.toLowerCase().trim();
-      const userFound = registry[normalizedEmail];
+      console.log("Tentando login para:", normalizedEmail);
 
-      console.log("Tentativa de login:", normalizedEmail);
-      console.log("Usuário encontrado no registro:", userFound);
+      try {
+        // 1. Tentar buscar no registro global do Supabase (para permitir login em qualquer aparelho)
+        const { data: userFound, error } = await supabase
+          .from('smokings_registry')
+          .select('*')
+          .eq('email', normalizedEmail)
+          .single();
 
-      if (userFound) {
-        if (userFound.password === password) {
-          login({
-            name: userFound.name,
-            email: userFound.email,
-            isOwner: userFound.isOwner,
-            ownerEmail: userFound.ownerEmail,
-            permissions: userFound.permissions || []
-          });
-          setIsLoading(false);
-          toast(`Bem-vindo, ${userFound.name}!`);
-          router.push("/dashboard");
-        } else {
-          setIsLoading(false);
-          toast("Senha incorreta.", "error");
+        if (userFound && !error) {
+          console.log("Usuário encontrado no Supabase:", userFound);
+          if (userFound.password === password) {
+            login({
+              name: userFound.name,
+              email: userFound.email,
+              isOwner: userFound.isOwner,
+              ownerEmail: userFound.ownerEmail,
+              permissions: userFound.permissions || []
+            });
+            setIsLoading(false);
+            toast(`Bem-vindo, ${userFound.name}!`);
+            router.push("/dashboard");
+            return;
+          } else {
+            setIsLoading(false);
+            toast("Senha incorreta.", "error");
+            return;
+          }
         }
-      } else {
+
+        // 2. Fallback: Tentar buscar no localStorage (apenas para o navegador atual)
+        const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+        const localUser = registry[normalizedEmail];
+
+        if (localUser) {
+          console.log("Usuário encontrado no localStorage:", localUser);
+          if (localUser.password === password) {
+            login({
+              name: localUser.name,
+              email: localUser.email,
+              isOwner: localUser.isOwner,
+              ownerEmail: localUser.ownerEmail,
+              permissions: localUser.permissions || []
+            });
+            setIsLoading(false);
+            toast(`Bem-vindo, ${localUser.name}!`);
+            router.push("/dashboard");
+            return;
+          } else {
+            setIsLoading(false);
+            toast("Senha incorreta.", "error");
+            return;
+          }
+        }
+
+        // 3. Se não encontrar em lugar nenhum
         setIsLoading(false);
-        // Se não encontrar, pode ser que o registro global ainda não exista no navegador deste usuário
-        toast("E-mail não cadastrado neste navegador.", "error");
-        console.error("ERRO: E-mail não encontrado no localStorage 'smokings_registry'");
+        toast("E-mail não cadastrado.", "error");
+        console.error("ERRO: E-mail não encontrado no Supabase nem no localStorage.");
+      } catch (err) {
+        console.error("Erro crítico no login:", err);
+        setIsLoading(false);
+        toast("Erro ao conectar com o servidor.", "error");
       }
     }, 1000);
   };
