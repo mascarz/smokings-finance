@@ -28,24 +28,33 @@ export default function LoginPage() {
     // Simular delay de rede
     setTimeout(() => {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-      // Normalizar email para evitar erros de caixa alta/baixa
       const normalizedEmail = email.toLowerCase().trim();
       const userFound = registry[normalizedEmail];
 
-      if (userFound && userFound.password === password) {
-        login({
-          name: userFound.name,
-          email: userFound.email,
-          isOwner: userFound.isOwner,
-          ownerEmail: userFound.ownerEmail,
-          permissions: userFound.permissions || []
-        });
-        setIsLoading(false);
-        toast(`Bem-vindo, ${userFound.name}!`);
-        router.push("/dashboard");
+      console.log("Tentativa de login:", normalizedEmail);
+      console.log("Usuário encontrado no registro:", userFound);
+
+      if (userFound) {
+        if (userFound.password === password) {
+          login({
+            name: userFound.name,
+            email: userFound.email,
+            isOwner: userFound.isOwner,
+            ownerEmail: userFound.ownerEmail,
+            permissions: userFound.permissions || []
+          });
+          setIsLoading(false);
+          toast(`Bem-vindo, ${userFound.name}!`);
+          router.push("/dashboard");
+        } else {
+          setIsLoading(false);
+          toast("Senha incorreta.", "error");
+        }
       } else {
         setIsLoading(false);
-        toast("E-mail ou senha incorretos.", "error");
+        // Se não encontrar, pode ser que o registro global ainda não exista no navegador deste usuário
+        toast("E-mail não cadastrado neste navegador.", "error");
+        console.error("ERRO: E-mail não encontrado no localStorage 'smokings_registry'");
       }
     }, 1000);
   };

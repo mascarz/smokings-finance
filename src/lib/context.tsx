@@ -393,26 +393,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addEmployee = (emp: any) => {
     const normalizedEmail = emp.email.toLowerCase().trim();
-    const newEmp = { ...emp, email: normalizedEmail };
-    setEmployees(prev => [newEmp, ...prev]);
+    // Garante que o funcionário tenha ao menos a permissão de vendas
+    const permissions = emp.permissions && emp.permissions.length > 0 ? emp.permissions : ["vendas"];
+    const newEmp = { ...emp, email: normalizedEmail, permissions };
     
-    // Registrar funcionário no sistema global para permitir login
+    setEmployees(prev => {
+      const exists = prev.find(e => e.email === normalizedEmail);
+      if (exists) return prev;
+      return [newEmp, ...prev];
+    });
+    
+    // Registrar funcionário no sistema global (localStorage) para permitir login
     if (typeof window !== "undefined" && user) {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
       registry[normalizedEmail] = {
         name: emp.name,
         email: normalizedEmail,
-        password: "123", // Senha padrão para novos funcionários
+        password: "123", // Senha padrão obrigatória
         isOwner: false,
-        ownerEmail: user.email, // Vincula ao dono atual
-        permissions: emp.permissions || []
+        ownerEmail: user.email.toLowerCase().trim(), // Vincula ao e-mail do dono atual
+        permissions: permissions
       };
       localStorage.setItem("smokings_registry", JSON.stringify(registry));
+      
+      // DEBUG: Mostrar no console para conferência
+      console.log("Funcionário registrado no sistema:", registry[normalizedEmail]);
     }
 
     addNotification({
       title: "Novo Funcionário",
-      message: `${emp.name} adicionado à equipe. Senha padrão: 123`,
+      message: `${emp.name} cadastrado. Login: ${normalizedEmail} | Senha: 123`,
       type: "info"
     });
   };
