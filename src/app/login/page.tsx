@@ -31,31 +31,43 @@ export default function LoginPage() {
       console.log("Tentando login para:", normalizedEmail);
 
       try {
-        // 1. Tentar buscar no registro global do Supabase (para permitir login em qualquer aparelho)
-        const { data: userFound, error } = await supabase
-          .from('smokings_registry')
-          .select('*')
-          .eq('email', normalizedEmail)
-          .single();
+        // 1. Tentar buscar no registro global do Supabase (apenas se as chaves estiverem corretas)
+        // Se a chave começar com 'sb_publishable', ela é do Clerk e vai dar erro no Supabase
+        const isSupabaseConfigured = 
+          process.env.NEXT_PUBLIC_SUPABASE_URL && 
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && 
+          !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('sb_publishable');
 
-        if (userFound && !error) {
-          console.log("Usuário encontrado no Supabase:", userFound);
-          if (userFound.password === password) {
-            login({
-              name: userFound.name,
-              email: userFound.email,
-              isOwner: userFound.isOwner,
-              ownerEmail: userFound.ownerEmail,
-              permissions: userFound.permissions || []
-            });
-            setIsLoading(false);
-            toast(`Bem-vindo, ${userFound.name}!`);
-            router.push("/dashboard");
-            return;
-          } else {
-            setIsLoading(false);
-            toast("Senha incorreta.", "error");
-            return;
+        if (isSupabaseConfigured) {
+          try {
+            const { data: userFound, error } = await supabase
+              .from('smokings_registry')
+              .select('*')
+              .eq('email', normalizedEmail)
+              .maybeSingle(); // Usar maybeSingle para evitar erro de 'single' quando não acha nada
+
+            if (userFound && !error) {
+              console.log("Usuário encontrado no Supabase:", userFound);
+              if (userFound.password === password) {
+                login({
+                  name: userFound.name,
+                  email: userFound.email,
+                  isOwner: userFound.isOwner,
+                  ownerEmail: userFound.ownerEmail,
+                  permissions: userFound.permissions || []
+                });
+                setIsLoading(false);
+                toast(`Bem-vindo, ${userFound.name}!`);
+                router.push("/dashboard");
+                return;
+              } else {
+                setIsLoading(false);
+                toast("Senha incorreta.", "error");
+                return;
+              }
+            }
+          } catch (supabaseErr) {
+            console.warn("Supabase não respondeu ou tabela não existe, tentando local...", supabaseErr);
           }
         }
 
@@ -87,11 +99,18 @@ export default function LoginPage() {
         // 3. Se não encontrar em lugar nenhum
         setIsLoading(false);
         toast("E-mail não cadastrado.", "error");
-        console.error("ERRO: E-mail não encontrado no Supabase nem no localStorage.");
       } catch (err) {
         console.error("Erro crítico no login:", err);
         setIsLoading(false);
-        toast("Erro ao conectar com o servidor.", "error");
+        // Tentar login local mesmo em erro crítico
+        const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+        if (registry[normalizedEmail] && registry[normalizedEmail].password === password) {
+          const u = registry[normalizedEmail];
+          login({ ...u, permissions: u.permissions || [] });
+          router.push("/dashboard");
+        } else {
+          toast("Erro ao conectar. Verifique as chaves no Render.", "error");
+        }
       }
     }, 1000);
   };
