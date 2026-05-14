@@ -43,11 +43,14 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
                 className
               )}
             >
-              <div className="flex items-center justify-between p-5 md:p-8 border-b border-border/50">
-                <h3 className="text-xl md:text-2xl font-black tracking-tight">{title}</h3>
+              <div className="flex items-center justify-between p-5 md:p-8 border-b border-border/50 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-gold-500 rounded-full" />
+                  <h3 className="text-xl md:text-2xl font-black tracking-tight">{title}</h3>
+                </div>
                 <button
                   onClick={onClose}
-                  className="p-2.5 bg-secondary/50 hover:bg-secondary rounded-xl transition-colors"
+                  className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
                 >
                   <X size={20} />
                 </button>

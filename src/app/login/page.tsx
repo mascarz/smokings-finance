@@ -9,22 +9,42 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
+import { useApp } from "@/lib/context";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useApp();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     toast("Autenticando...", "info");
-    // Simular login
+    
+    // Simular delay de rede
     setTimeout(() => {
-      setIsLoading(false);
-      toast("Login realizado com sucesso!");
-      router.push("/dashboard");
-    }, 1500);
+      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+      const userFound = registry[email];
+
+      if (userFound && userFound.password === password) {
+        login({
+          name: userFound.name,
+          email: userFound.email,
+          isOwner: userFound.isOwner,
+          ownerEmail: userFound.ownerEmail
+        });
+        setIsLoading(false);
+        toast(`Bem-vindo, ${userFound.name}!`);
+        router.push("/dashboard");
+      } else {
+        setIsLoading(false);
+        toast("E-mail ou senha incorretos.", "error");
+      }
+    }, 1000);
   };
 
   return (
@@ -62,6 +82,8 @@ export default function LoginPage() {
                     placeholder="E-mail profissional" 
                     className="pl-12" 
                     required 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -73,6 +95,8 @@ export default function LoginPage() {
                     placeholder="Sua senha segura" 
                     className="pl-12" 
                     required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
               </div>

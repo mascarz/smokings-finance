@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   isOwner: boolean;
+  ownerEmail?: string; // E-mail do dono desta conta (se for funcionário)
 }
 
 interface Notification {
@@ -30,6 +31,7 @@ interface Product {
   name: string;
   price: number;
   category: string;
+  stock: number;
 }
 
 interface ComandaItem {
@@ -78,6 +80,7 @@ interface AppContextType {
   addProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
+  updateStock: (id: string, delta: number) => void;
   addComanda: (comanda: Omit<Comanda, 'id' | 'date' | 'status' | 'items'>) => void;
   addItemToComanda: (comandaId: string, item: ComandaItem) => void;
   updateComandaItem: (comandaId: string, productId: string, quantity: number) => void;
@@ -89,6 +92,7 @@ interface AppContextType {
   updateNotinha: (id: string, notinha: Partial<Notinha>) => void;
   payNotinha: (id: string) => void;
   addEmployee: (employee: any) => void;
+  deleteEmployee: (id: string) => void;
   updateEmployeePermissions: (email: string, permissions: string[]) => void;
   addExpense: (expense: any) => void;
   addCustomer: (customer: any) => void;
@@ -96,6 +100,7 @@ interface AppContextType {
   markNotificationAsRead: (id: string) => void;
   clearNotifications: () => void;
   clearAllData: () => void;
+  registerUser: (userData: any) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -115,36 +120,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedUser = localStorage.getItem("smokings_user");
-      if (savedUser) setUser(JSON.parse(savedUser));
-      
-      setSales(JSON.parse(localStorage.getItem("smokings_sales") || "[]"));
-      setNotinhas(JSON.parse(localStorage.getItem("smokings_notinhas") || "[]"));
-      setProducts(JSON.parse(localStorage.getItem("smokings_products") || "[]"));
-      setComandas(JSON.parse(localStorage.getItem("smokings_comandas") || "[]"));
-      setEmployees(JSON.parse(localStorage.getItem("smokings_employees") || "[]"));
-      setExpenses(JSON.parse(localStorage.getItem("smokings_expenses") || "[]"));
-      setCustomers(JSON.parse(localStorage.getItem("smokings_customers") || "[]"));
-      setNotifications(JSON.parse(localStorage.getItem("smokings_notifications") || "[]"));
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        
+        const ownerPrefix = parsedUser.ownerEmail || parsedUser.email;
+        
+        setSales(JSON.parse(localStorage.getItem(`smokings_sales_${ownerPrefix}`) || "[]"));
+        setNotinhas(JSON.parse(localStorage.getItem(`smokings_notinhas_${ownerPrefix}`) || "[]"));
+        setProducts(JSON.parse(localStorage.getItem(`smokings_products_${ownerPrefix}`) || "[]"));
+        setComandas(JSON.parse(localStorage.getItem(`smokings_comandas_${ownerPrefix}`) || "[]"));
+        setEmployees(JSON.parse(localStorage.getItem(`smokings_employees_${ownerPrefix}`) || "[]"));
+        setExpenses(JSON.parse(localStorage.getItem(`smokings_expenses_${ownerPrefix}`) || "[]"));
+        setCustomers(JSON.parse(localStorage.getItem(`smokings_customers_${ownerPrefix}`) || "[]"));
+        setNotifications(JSON.parse(localStorage.getItem(`smokings_notifications_${ownerPrefix}`) || "[]"));
+      }
     }
   }, []);
 
   // Salvar dados sempre que mudarem
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (user) localStorage.setItem("smokings_user", JSON.stringify(user));
-      localStorage.setItem("smokings_sales", JSON.stringify(sales));
-      localStorage.setItem("smokings_notinhas", JSON.stringify(notinhas));
-      localStorage.setItem("smokings_products", JSON.stringify(products));
-      localStorage.setItem("smokings_comandas", JSON.stringify(comandas));
-      localStorage.setItem("smokings_employees", JSON.stringify(employees));
-      localStorage.setItem("smokings_expenses", JSON.stringify(expenses));
-      localStorage.setItem("smokings_customers", JSON.stringify(customers));
-      localStorage.setItem("smokings_notifications", JSON.stringify(notifications));
+    if (typeof window !== "undefined" && user) {
+      localStorage.setItem("smokings_user", JSON.stringify(user));
+      
+      const ownerPrefix = user.ownerEmail || user.email;
+      
+      localStorage.setItem(`smokings_sales_${ownerPrefix}`, JSON.stringify(sales));
+      localStorage.setItem(`smokings_notinhas_${ownerPrefix}`, JSON.stringify(notinhas));
+      localStorage.setItem(`smokings_products_${ownerPrefix}`, JSON.stringify(products));
+      localStorage.setItem(`smokings_comandas_${ownerPrefix}`, JSON.stringify(comandas));
+      localStorage.setItem(`smokings_employees_${ownerPrefix}`, JSON.stringify(employees));
+      localStorage.setItem(`smokings_expenses_${ownerPrefix}`, JSON.stringify(expenses));
+      localStorage.setItem(`smokings_customers_${ownerPrefix}`, JSON.stringify(customers));
+      localStorage.setItem(`smokings_notifications_${ownerPrefix}`, JSON.stringify(notifications));
     }
   }, [user, sales, notinhas, products, comandas, employees, expenses, customers, notifications]);
 
   const login = (userData: User) => {
     setUser(userData);
+    // Recarregar dados do dono ao logar
+    const ownerPrefix = userData.ownerEmail || userData.email;
+    if (typeof window !== "undefined") {
+      setSales(JSON.parse(localStorage.getItem(`smokings_sales_${ownerPrefix}`) || "[]"));
+      setNotinhas(JSON.parse(localStorage.getItem(`smokings_notinhas_${ownerPrefix}`) || "[]"));
+      setProducts(JSON.parse(localStorage.getItem(`smokings_products_${ownerPrefix}`) || "[]"));
+      setComandas(JSON.parse(localStorage.getItem(`smokings_comandas_${ownerPrefix}`) || "[]"));
+      setEmployees(JSON.parse(localStorage.getItem(`smokings_employees_${ownerPrefix}`) || "[]"));
+      setExpenses(JSON.parse(localStorage.getItem(`smokings_expenses_${ownerPrefix}`) || "[]"));
+      setCustomers(JSON.parse(localStorage.getItem(`smokings_customers_${ownerPrefix}`) || "[]"));
+      setNotifications(JSON.parse(localStorage.getItem(`smokings_notifications_${ownerPrefix}`) || "[]"));
+    }
   };
 
   const logout = () => {
@@ -202,6 +227,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newProduct: Product = {
       ...productData,
       id: Math.random().toString(36).substr(2, 9),
+      stock: productData.stock || 0,
     };
     setProducts(prev => [newProduct, ...prev]);
   };
@@ -212,6 +238,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteProduct = (id: string) => {
     setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const updateStock = (id: string, delta: number) => {
+    setProducts(prev => prev.map(p => {
+      if (p.id === id) {
+        const newStock = Math.max(0, p.stock + delta);
+        return { ...p, stock: newStock };
+      }
+      return p;
+    }));
   };
 
   // Funções de Comandas
@@ -356,11 +392,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addEmployee = (emp: any) => {
     setEmployees(prev => [emp, ...prev]);
+    
+    // Registrar funcionário no sistema global para permitir login
+    if (typeof window !== "undefined" && user) {
+      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+      registry[emp.email] = {
+        name: emp.name,
+        email: emp.email,
+        password: "123", // Senha padrão para novos funcionários
+        isOwner: false,
+        ownerEmail: user.email // Vincula ao dono atual
+      };
+      localStorage.setItem("smokings_registry", JSON.stringify(registry));
+    }
+
     addNotification({
       title: "Novo Funcionário",
-      message: `${emp.name} adicionado à equipe.`,
+      message: `${emp.name} adicionado à equipe. Senha padrão: 123`,
       type: "info"
     });
+  };
+
+  const deleteEmployee = (id: string) => {
+    const employeeToDelete = employees.find(e => e.id === id);
+    if (employeeToDelete && typeof window !== "undefined") {
+      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+      delete registry[employeeToDelete.email];
+      localStorage.setItem("smokings_registry", JSON.stringify(registry));
+    }
+    setEmployees(prev => prev.filter(emp => emp.id !== id));
+    addNotification({
+      title: "Funcionário Removido",
+      message: "O acesso do funcionário foi revogado.",
+      type: "warning"
+    });
+  };
+
+  const registerUser = (userData: any) => {
+    if (typeof window !== "undefined") {
+      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+      registry[userData.email] = {
+        ...userData,
+        isOwner: true,
+        ownerEmail: userData.email
+      };
+      localStorage.setItem("smokings_registry", JSON.stringify(registry));
+    }
   };
 
   const updateEmployeePermissions = (email: string, permissions: string[]) => {
@@ -387,11 +464,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{ 
       user, sales, notinhas, products, comandas, employees, expenses, customers, notifications,
       login, logout, addSale, 
-      addProduct, updateProduct, deleteProduct,
+      addProduct, updateProduct, deleteProduct, updateStock,
       addComanda, addItemToComanda, updateComandaItem, payComanda, updateComanda,
       addNotinha, addItemToNotinha, updateNotinhaItem, updateNotinha, payNotinha, 
-      addEmployee, updateEmployeePermissions, addExpense, addCustomer,
-      addNotification, markNotificationAsRead, clearNotifications, clearAllData 
+      addEmployee, deleteEmployee, updateEmployeePermissions, addExpense, addCustomer,
+      addNotification, markNotificationAsRead, clearNotifications, clearAllData, registerUser
     }}>
       {children}
     </AppContext.Provider>

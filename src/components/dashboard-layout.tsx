@@ -26,7 +26,8 @@ import {
   AlertTriangle, 
   XCircle, 
   Trash2, 
-  Check
+  Check,
+  Crown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -50,14 +51,14 @@ function SidebarItem({ href, icon: Icon, label, active }: SidebarItemProps) {
       className={cn(
         "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
         active 
-          ? "bg-slate-950 dark:bg-white text-white dark:text-slate-950 shadow-xl shadow-slate-200 dark:shadow-black/20" 
+          ? "bg-gold-500 text-black shadow-lg shadow-gold-500/20" 
           : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200"
       )}
     >
-      <Icon size={20} className={cn("transition-all duration-300 group-hover:scale-110", active ? "text-inherit" : "text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200")} />
-      <span className="font-semibold text-sm tracking-tight">{label}</span>
+      <Icon size={20} className={cn("transition-all duration-300 group-hover:scale-110", active ? "text-black" : "text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200")} />
+      <span className="font-bold text-sm tracking-tight">{label}</span>
       {active && (
-        <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-gold-500 animate-pulse" />
+        <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
       )}
     </Link>
   );
@@ -70,6 +71,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { toast } = useToast();
 
   const { user, logout: contextLogout } = useApp();
+
+  // Proteção de rota simplificada
+  React.useEffect(() => {
+    const savedUser = localStorage.getItem("smokings_user");
+    if (!savedUser && !pathname.includes("/login") && !pathname.includes("/register")) {
+      router.push("/login");
+    }
+  }, [pathname, router]);
 
   const handleLogout = () => {
     toast("Saindo do sistema...", "info");
@@ -96,12 +105,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const SidebarContent = () => (
     <div className="flex flex-col h-full overflow-y-auto no-scrollbar">
       <div className="flex items-center gap-3 mb-10 px-2 py-4 shrink-0">
-        <div className="w-10 h-10 rounded-2xl bg-gold-500 flex items-center justify-center shadow-lg shadow-gold-500/20">
-          <ShoppingBag className="text-white" size={20} />
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-black to-slate-800 flex items-center justify-center shadow-2xl shadow-gold-500/30 border border-gold-500/40 group overflow-hidden">
+          <div className="relative group-hover:scale-110 transition-transform duration-500">
+            <Crown className="text-gold-500 fill-gold-500/20" size={26} />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-gold-400 rounded-full animate-ping" />
+          </div>
         </div>
         <div className="flex flex-col">
-          <span className="font-black text-xl tracking-tighter leading-none">SMOKINGS</span>
-          <span className="text-[10px] font-bold text-gold-600 tracking-[0.2em] uppercase">Premium Admin</span>
+          <div className="flex items-center gap-1">
+            <span className="font-black text-2xl tracking-tighter leading-none text-slate-900 dark:text-white group-hover:text-gold-500 transition-colors">SMOKINGS</span>
+          </div>
+          <span className="text-[9px] font-black text-gold-600 tracking-[0.3em] uppercase opacity-80">Tabacaria & Lounge</span>
         </div>
       </div>
 
@@ -183,10 +197,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
 
             <div className="flex flex-col">
-              <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 truncate max-w-[120px] md:max-w-none">Gestão de Tabacaria</h2>
+              <h2 className="text-[10px] font-black text-gold-600 uppercase tracking-[0.2em] mb-0.5 truncate max-w-[120px] md:max-w-none">Premium Lounge</h2>
               <div className="flex items-center gap-2">
-                <h1 className="text-base md:text-xl font-black tracking-tight truncate max-w-[120px] md:max-w-none">{user?.name || "Premium User"}</h1>
-                <div className="hidden xs:block px-1.5 py-0.5 rounded-md bg-gold-500/10 text-gold-600 text-[8px] md:text-[10px] font-bold uppercase tracking-wider">Proprietário</div>
+                <h1 className="text-base md:text-xl font-black tracking-tight truncate max-w-[120px] md:max-w-none text-slate-900 dark:text-white">{user?.name || "Premium User"}</h1>
+                <div className="hidden xs:block px-2 py-0.5 rounded-md bg-gold-500 text-black text-[8px] md:text-[9px] font-black uppercase tracking-wider shadow-sm">
+                  {user?.isOwner ? "Proprietário" : "Funcionário"}
+                </div>
               </div>
             </div>
           </div>

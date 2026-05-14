@@ -13,7 +13,7 @@ import { useApp } from "@/lib/context";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login, clearAllData } = useApp();
+  const { login, clearAllData, registerUser } = useApp();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -32,10 +32,19 @@ export default function RegisterPage() {
     // Simular registro e limpeza de dados para novo dono
     setTimeout(() => {
       clearAllData();
-      login({
+      const userData = {
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
         isOwner: true,
+      };
+      registerUser(userData);
+      login({
+        name: userData.name,
+        email: userData.email,
+        isOwner: true,
+        ownerEmail: userData.email
       });
       setIsLoading(false);
       toast("Conta criada com sucesso! Ambiente zerado e pronto.");

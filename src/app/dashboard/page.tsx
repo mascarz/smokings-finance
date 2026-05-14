@@ -85,7 +85,7 @@ export default function DashboardPage() {
       change: "+3",
       trend: "up",
       icon: Users,
-      color: "bg-blue-500",
+      color: "bg-black dark:bg-slate-800",
     },
     {
       title: "Total de Vendas",
@@ -93,7 +93,7 @@ export default function DashboardPage() {
       change: "+8.2%",
       trend: "up",
       icon: ShoppingBag,
-      color: "bg-emerald-500",
+      color: "bg-gold-600",
     },
     {
       title: "Ticket Médio",
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       change: "+5.4%",
       trend: "up",
       icon: TrendingUp,
-      color: "bg-indigo-500",
+      color: "bg-slate-900",
     },
   ];
 
@@ -127,7 +127,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex flex-col gap-3 w-full md:w-auto">
-            <Button variant="gold" size="lg" className="w-full md:w-auto gap-2 group h-12 md:h-14">
+            <Button variant="premium" size="lg" className="w-full md:w-auto gap-2 group h-12 md:h-14 bg-gold-600 hover:bg-gold-700 text-black font-black shadow-xl shadow-gold-500/20">
               Relatório Completo
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Button>

@@ -24,8 +24,7 @@ import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/context";
 
 export default function FuncionariosPage() {
-  const { employees: contextEmployees, addEmployee, updateEmployeePermissions } = useApp();
-  const [employees, setEmployees] = useState(contextEmployees.length > 0 ? contextEmployees : []);
+  const { employees, addEmployee, deleteEmployee, updateEmployeePermissions } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
@@ -81,14 +80,13 @@ export default function FuncionariosPage() {
       permissions: ["visualizar", "vender"],
     };
     addEmployee(employeeToAdd);
-    setEmployees([employeeToAdd, ...employees]);
     setIsModalOpen(false);
     setNewEmployee({ name: "", email: "", phone: "", role: "Atendente" });
-    toast("Funcionário cadastrado com sucesso!");
+    toast("Funcionário cadastrado! Senha padrão: 123");
   };
 
   const handleDeleteEmployee = (id: string) => {
-    setEmployees(employees.filter(emp => emp.id !== id));
+    deleteEmployee(id);
     toast("Funcionário removido.", "info");
   };
 
