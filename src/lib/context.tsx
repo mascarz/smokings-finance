@@ -142,6 +142,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // 1. Ativar Escuta em Tempo Real (Realtime)
+  useEffect(() => {
+    if (user) {
+      const ownerPrefix = user.isOwner ? user.email.toLowerCase().trim() : (user.ownerEmail?.toLowerCase().trim() || user.email.toLowerCase().trim());
+      
+      const channel = supabase
+        .channel('db_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'sales', filter: `owner_email=eq.${ownerPrefix}` },
+          (payload) => {
+            console.log("Venda alterada no banco!", payload);
+            syncWithSupabase(ownerPrefix); // Recarrega os dados
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'products', filter: `owner_email=eq.${ownerPrefix}` },
+          (payload) => {
+            console.log("Produto alterado no banco!", payload);
+            syncWithSupabase(ownerPrefix);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
+
   // Salvar dados sempre que mudarem
   useEffect(() => {
     if (typeof window !== "undefined" && user) {
@@ -338,15 +369,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setNotifications([]);
   };
 
-  const addSale = (saleData: Omit<Sale, 'id' | 'date'>) => {
+  const addSale = async (saleData: Omit<Sale, 'id' | 'date'>) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     const newSale: Sale = {
       ...saleData,
       id: Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString(),
+      owner_email: ownerPrefix
     };
+    
+    // Atualiza local
     setSales(prev => [newSale, ...prev]);
     
-    // Notificação automática de venda
+    // Envia para o Supabase IMEDIATAMENTE
+    try {
+      await supabase.from('sales').upsert([newSale]);
+    } catch (err) {
+      console.warn("Erro ao salvar venda na nuvem:", err);
+    }
+    
     addNotification({
       title: "Nova Venda",
       message: `${saleData.quantity}x ${saleData.product} faturado com sucesso.`,
