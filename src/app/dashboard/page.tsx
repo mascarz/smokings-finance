@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   TrendingUp, 
@@ -12,7 +12,9 @@ import {
   Calendar,
   Zap,
   ArrowRight,
-  MoreHorizontal
+  MoreHorizontal,
+  ShoppingBag,
+  RefreshCw
 } from "lucide-react";
 import { 
   BarChart, 
@@ -26,17 +28,16 @@ import {
   Area 
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { useApp } from "@/lib/context";
-import { ShoppingBag, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { toast } = useToast();
   const { sales, notinhas, expenses, customers, user, syncAllDataToCloud } = useApp();
-  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSyncAll = async () => {
     if (!user?.isOwner) return;
