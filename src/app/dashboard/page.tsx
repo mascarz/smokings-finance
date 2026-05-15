@@ -36,7 +36,7 @@ import Link from "next/link";
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const { sales, notinhas, expenses, customers, user, syncAllDataToCloud } = useApp();
+  const { sales, notinhas, expenses, customers, user, syncAllDataToCloud, comandas } = useApp();
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSyncAll = async () => {

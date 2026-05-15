@@ -165,6 +165,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             syncWithSupabase(ownerPrefix);
           }
         )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'comandas', filter: `owner_email=eq.${ownerPrefix}` },
+          (payload) => {
+            console.log("Comanda alterada no banco!", payload);
+            syncWithSupabase(ownerPrefix);
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'notinhas', filter: `owner_email=eq.${ownerPrefix}` },
+          (payload) => {
+            console.log("Notinha alterada no banco!", payload);
+            syncWithSupabase(ownerPrefix);
+          }
+        )
         .subscribe();
 
       return () => {
@@ -266,7 +282,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(salesData));
       }
 
-      // 3. Sincronizar CLIENTES
+      // 3. Sincronizar COMANDAS
+      const { data: comandasData, error: comandasError } = await supabase
+        .from('comandas')
+        .select('*')
+        .eq('owner_email', normalizedOwnerEmail);
+
+      if (comandasData && !comandasError) {
+        console.log("Comandas baixadas:", comandasData.length);
+        setComandas(comandasData);
+        localStorage.setItem(`smokings_comandas_${normalizedOwnerEmail}`, JSON.stringify(comandasData));
+      }
+
+      // 4. Sincronizar NOTINHAS
+      const { data: notinhasData, error: notinhasError } = await supabase
+        .from('notinhas')
+        .select('*')
+        .eq('owner_email', normalizedOwnerEmail);
+
+      if (notinhasData && !notinhasError) {
+        console.log("Notinhas baixadas:", notinhasData.length);
+        setNotinhas(notinhasData);
+        localStorage.setItem(`smokings_notinhas_${normalizedOwnerEmail}`, JSON.stringify(notinhasData));
+      }
+
+      // 5. Sincronizar CLIENTES
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('*')
@@ -354,6 +394,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (sError) console.error("Erro vendas:", sError);
       }
 
+      // 3. Sincronizar Comandas
+      if (comandas.length > 0) {
+        const comandasToSync = comandas.map(c => ({ ...c, owner_email: ownerEmail }));
+        const { error: cError } = await supabase.from('comandas').upsert(comandasToSync);
+        if (cError) console.error("Erro comandas:", cError);
+      }
+
+      // 4. Sincronizar Notinhas
+      if (notinhas.length > 0) {
+        const notinhasToSync = notinhas.map(n => ({ ...n, owner_email: ownerEmail }));
+        const { error: nError } = await supabase.from('notinhas').upsert(notinhasToSync);
+        if (nError) console.error("Erro notinhas:", nError);
+      }
+
       return true;
     } catch (err) {
       console.error("Erro crítico na sincronização total:", err);
@@ -425,51 +479,81 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Funções de Comandas
-  const addComanda = (comandaData: Omit<Comanda, 'id' | 'date' | 'status' | 'items'>) => {
+  const addComanda = async (comandaData: Omit<Comanda, 'id' | 'date' | 'status' | 'items'>) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     const newComanda: Comanda = {
       ...comandaData,
       id: Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString(),
       status: 'aberta',
-      items: []
+      items: [],
+      owner_email: ownerPrefix
     };
+    
     setComandas(prev => [newComanda, ...prev]);
+
+    try {
+      await supabase.from('comandas').upsert([newComanda]);
+    } catch (err) {
+      console.warn("Erro ao salvar comanda na nuvem:", err);
+    }
   };
 
-  const addItemToComanda = (comandaId: string, item: ComandaItem) => {
-    setComandas(prev => prev.map(c => {
-      if (c.id === comandaId) {
-        const existingItem = c.items.find(i => i.productId === item.productId);
-        if (existingItem) {
-          return {
-            ...c,
-            items: c.items.map(i => i.productId === item.productId 
+  const addItemToComanda = async (comandaId: string, item: ComandaItem) => {
+    setComandas(prev => {
+      const newComandas = prev.map(c => {
+        if (c.id === comandaId) {
+          const existingItem = c.items.find(i => i.productId === item.productId);
+          let newItems;
+          if (existingItem) {
+            newItems = c.items.map(i => i.productId === item.productId 
               ? { ...i, quantity: i.quantity + item.quantity } 
-              : i)
-          };
+              : i);
+          } else {
+            newItems = [...c.items, item];
+          }
+          const updatedComanda = { ...c, items: newItems };
+          
+          // Sync to Supabase
+          supabase.from('comandas').upsert([updatedComanda]).then(({error}) => {
+            if (error) console.error("Erro ao atualizar itens da comanda:", error);
+          });
+          
+          return updatedComanda;
         }
-        return { ...c, items: [...c.items, item] };
-      }
-      return c;
-    }));
+        return c;
+      });
+      return newComandas;
+    });
   };
 
-  const updateComandaItem = (comandaId: string, productId: string, quantity: number) => {
-    setComandas(prev => prev.map(c => {
-      if (c.id === comandaId) {
-        if (quantity <= 0) {
-          return { ...c, items: c.items.filter(i => i.productId !== productId) };
+  const updateComandaItem = async (comandaId: string, productId: string, quantity: number) => {
+    setComandas(prev => {
+      const newComandas = prev.map(c => {
+        if (c.id === comandaId) {
+          let newItems;
+          if (quantity <= 0) {
+            newItems = c.items.filter(i => i.productId !== productId);
+          } else {
+            newItems = c.items.map(i => i.productId === productId ? { ...i, quantity } : i);
+          }
+          const updatedComanda = { ...c, items: newItems };
+          
+          // Sync to Supabase
+          supabase.from('comandas').upsert([updatedComanda]).then(({error}) => {
+            if (error) console.error("Erro ao atualizar quantidade do item:", error);
+          });
+          
+          return updatedComanda;
         }
-        return {
-          ...c,
-          items: c.items.map(i => i.productId === productId ? { ...i, quantity } : i)
-        };
-      }
-      return c;
-    }));
+        return c;
+      });
+      return newComandas;
+    });
   };
 
-  const payComanda = (id: string) => {
+  const payComanda = async (id: string) => {
     const comanda = comandas.find(c => c.id === id);
     if (comanda && comanda.status === 'aberta') {
       // Adicionar cada item ao faturamento (sales)
@@ -480,8 +564,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           quantity: item.quantity
         });
       });
-      setComandas(prev => prev.map(c => c.id === id ? { ...c, status: 'paga' } : c));
       
+      const updatedComanda = { ...comanda, status: 'paga' };
+      setComandas(prev => prev.map(c => c.id === id ? updatedComanda : c));
+      
+      try {
+        await supabase.from('comandas').upsert([updatedComanda]);
+      } catch (err) {
+        console.error("Erro ao pagar comanda na nuvem:", err);
+      }
+
       addNotification({
         title: "Comanda Paga",
         message: `Comanda de ${comanda.customerName} finalizada.`,
@@ -490,60 +582,112 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateComanda = (id: string, comandaUpdate: Partial<Comanda>) => {
-    setComandas(prev => prev.map(c => c.id === id ? { ...c, ...comandaUpdate } : c));
+  const updateComanda = async (id: string, comandaUpdate: Partial<Comanda>) => {
+    setComandas(prev => {
+      const newComandas = prev.map(c => {
+        if (c.id === id) {
+          const updatedComanda = { ...c, ...comandaUpdate };
+          supabase.from('comandas').upsert([updatedComanda]).then(({error}) => {
+            if (error) console.error("Erro ao atualizar comanda:", error);
+          });
+          return updatedComanda;
+        }
+        return c;
+      });
+      return newComandas;
+    });
   };
 
   // Funções de Notinhas
-  const addNotinha = (notinhaData: Omit<Notinha, 'id' | 'date' | 'status' | 'items'>) => {
+  const addNotinha = async (notinhaData: Omit<Notinha, 'id' | 'date' | 'status' | 'items'>) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     const newNotinha: Notinha = {
       ...notinhaData,
       id: Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString(),
       status: 'pendente',
-      items: []
+      items: [],
+      owner_email: ownerPrefix
     };
+    
     setNotinhas(prev => [newNotinha, ...prev]);
+
+    try {
+      await supabase.from('notinhas').upsert([newNotinha]);
+    } catch (err) {
+      console.warn("Erro ao salvar notinha na nuvem:", err);
+    }
   };
 
-  const addItemToNotinha = (notinhaId: string, item: NotinhaItem) => {
-    setNotinhas(prev => prev.map(n => {
-      if (n.id === notinhaId) {
-        const existingItem = n.items.find(i => i.productId === item.productId);
-        if (existingItem) {
-          return {
-            ...n,
-            items: n.items.map(i => i.productId === item.productId 
+  const addItemToNotinha = async (notinhaId: string, item: NotinhaItem) => {
+    setNotinhas(prev => {
+      const newNotinhas = prev.map(n => {
+        if (n.id === notinhaId) {
+          const existingItem = n.items.find(i => i.productId === item.productId);
+          let newItems;
+          if (existingItem) {
+            newItems = n.items.map(i => i.productId === item.productId 
               ? { ...i, quantity: i.quantity + item.quantity } 
-              : i)
-          };
+              : i);
+          } else {
+            newItems = [...n.items, item];
+          }
+          const updatedNotinha = { ...n, items: newItems };
+          
+          supabase.from('notinhas').upsert([updatedNotinha]).then(({error}) => {
+            if (error) console.error("Erro ao atualizar itens da notinha:", error);
+          });
+          
+          return updatedNotinha;
         }
-        return { ...n, items: [...n.items, item] };
-      }
-      return n;
-    }));
+        return n;
+      });
+      return newNotinhas;
+    });
   };
 
-  const updateNotinhaItem = (notinhaId: string, productId: string, quantity: number) => {
-    setNotinhas(prev => prev.map(n => {
-      if (n.id === notinhaId) {
-        if (quantity <= 0) {
-          return { ...n, items: n.items.filter(i => i.productId !== productId) };
+  const updateNotinhaItem = async (notinhaId: string, productId: string, quantity: number) => {
+    setNotinhas(prev => {
+      const newNotinhas = prev.map(n => {
+        if (n.id === notinhaId) {
+          let newItems;
+          if (quantity <= 0) {
+            newItems = n.items.filter(i => i.productId !== productId);
+          } else {
+            newItems = n.items.map(i => i.productId === productId ? { ...i, quantity } : i);
+          }
+          const updatedNotinha = { ...n, items: newItems };
+          
+          supabase.from('notinhas').upsert([updatedNotinha]).then(({error}) => {
+            if (error) console.error("Erro ao atualizar quantidade da notinha:", error);
+          });
+          
+          return updatedNotinha;
         }
-        return {
-          ...n,
-          items: n.items.map(i => i.productId === productId ? { ...i, quantity } : i)
-        };
-      }
-      return n;
-    }));
+        return n;
+      });
+      return newNotinhas;
+    });
   };
 
-  const updateNotinha = (id: string, notinhaUpdate: Partial<Notinha>) => {
-    setNotinhas(prev => prev.map(n => n.id === id ? { ...n, ...notinhaUpdate } : n));
+  const updateNotinha = async (id: string, notinhaUpdate: Partial<Notinha>) => {
+    setNotinhas(prev => {
+      const newNotinhas = prev.map(n => {
+        if (n.id === id) {
+          const updatedNotinha = { ...n, ...notinhaUpdate };
+          supabase.from('notinhas').upsert([updatedNotinha]).then(({error}) => {
+            if (error) console.error("Erro ao atualizar notinha:", error);
+          });
+          return updatedNotinha;
+        }
+        return n;
+      });
+      return newNotinhas;
+    });
   };
 
-  const payNotinha = (id: string) => {
+  const payNotinha = async (id: string) => {
     const notinha = notinhas.find(n => n.id === id);
     if (notinha && notinha.status === 'pendente') {
       // Adicionar cada item ao faturamento
@@ -554,7 +698,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           quantity: item.quantity
         });
       });
-      setNotinhas(prev => prev.map(n => n.id === id ? { ...n, status: 'pago' } : n));
+      
+      const updatedNotinha = { ...notinha, status: 'pago' };
+      setNotinhas(prev => prev.map(n => n.id === id ? updatedNotinha : n));
+
+      try {
+        await supabase.from('notinhas').upsert([updatedNotinha]);
+      } catch (err) {
+        console.error("Erro ao pagar notinha na nuvem:", err);
+      }
 
       addNotification({
         title: "Notinha Paga",
