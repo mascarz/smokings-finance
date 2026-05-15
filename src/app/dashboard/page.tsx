@@ -343,5 +343,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-import { cn } from "@/lib/utils";
