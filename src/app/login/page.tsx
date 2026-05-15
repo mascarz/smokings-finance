@@ -39,6 +39,7 @@ export default function LoginPage() {
 
         if (isSupabaseConfigured) {
           try {
+            console.log("Consultando Supabase para:", normalizedEmail);
             const { data: userFound, error } = await supabase
               .from('smokings_registry')
               .select('*')
@@ -56,7 +57,6 @@ export default function LoginPage() {
                   permissions: userFound.permissions || []
                 };
                 login(userData);
-                // Persistir no localStorage para o navegador lembrar
                 localStorage.setItem("smokings_user", JSON.stringify(userData));
                 
                 setIsLoading(false);
@@ -68,6 +68,10 @@ export default function LoginPage() {
                 toast("Senha incorreta.", "error");
                 return;
               }
+            } else if (error) {
+              console.error("Erro na consulta Supabase:", error);
+            } else {
+              console.log("Nenhum usuário encontrado no Supabase para este email.");
             }
           } catch (supabaseErr) {
             console.warn("Erro ao consultar Supabase, tentando local...", supabaseErr);

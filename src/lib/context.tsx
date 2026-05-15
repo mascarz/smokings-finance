@@ -155,6 +155,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(`smokings_expenses_${ownerPrefix}`, JSON.stringify(expenses));
       localStorage.setItem(`smokings_customers_${ownerPrefix}`, JSON.stringify(customers));
       localStorage.setItem(`smokings_notifications_${ownerPrefix}`, JSON.stringify(notifications));
+
+      // Auto-sincronizar funcionários com o Supabase quando o dono está logado
+      if (user.isOwner && employees.length > 0) {
+        const syncEmployees = async () => {
+          try {
+            const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+            const employeesToSync = employees.map(emp => ({
+              name: emp.name,
+              email: emp.email.toLowerCase().trim(),
+              password: "123",
+              isOwner: false,
+              ownerEmail: user.email.toLowerCase().trim(),
+              permissions: emp.permissions || ["vendas"]
+            }));
+
+            for (const empData of employeesToSync) {
+              await saveToSupabaseRegistry(empData);
+            }
+          } catch (err) {
+            console.warn("Erro na auto-sincronização:", err);
+          }
+        };
+        syncEmployees();
+      }
     }
   }, [user, sales, notinhas, products, comandas, employees, expenses, customers, notifications]);
 
