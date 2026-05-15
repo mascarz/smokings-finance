@@ -187,9 +187,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const login = (userData: User) => {
     setUser(userData);
     // Recarregar dados do dono ao logar
-    const ownerPrefix = userData.ownerEmail || userData.email;
+    // IMPORTANTE: Se for funcionário, usar SEMPRE o ownerEmail para carregar os dados
+    const ownerPrefix = userData.isOwner ? userData.email.toLowerCase().trim() : (userData.ownerEmail?.toLowerCase().trim() || userData.email.toLowerCase().trim());
+    
     if (typeof window !== "undefined") {
-      // Primeiro tenta carregar o que já tem local
+      console.log("Logado como:", userData.email, "| Carregando dados de:", ownerPrefix);
+      
       setSales(JSON.parse(localStorage.getItem(`smokings_sales_${ownerPrefix}`) || "[]"));
       setNotinhas(JSON.parse(localStorage.getItem(`smokings_notinhas_${ownerPrefix}`) || "[]"));
       setProducts(JSON.parse(localStorage.getItem(`smokings_products_${ownerPrefix}`) || "[]"));
@@ -199,8 +202,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCustomers(JSON.parse(localStorage.getItem(`smokings_customers_${ownerPrefix}`) || "[]"));
       setNotifications(JSON.parse(localStorage.getItem(`smokings_notifications_${ownerPrefix}`) || "[]"));
       
-      // FORÇAR sincronização com Supabase para baixar os dados do dono
-      console.log("Sincronizando dados do dono:", ownerPrefix);
       syncWithSupabase(ownerPrefix);
     }
   };
