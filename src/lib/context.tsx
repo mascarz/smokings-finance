@@ -207,19 +207,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const syncWithSupabase = async (ownerEmail: string) => {
     try {
-      // Tentar buscar registros de usuários (funcionários) do Supabase
-      const { data, error } = await supabase
+      const normalizedOwnerEmail = ownerEmail.toLowerCase().trim();
+      console.log("Sincronizando banco de dados da nuvem para:", normalizedOwnerEmail);
+
+      // 1. Sincronizar Registro de Usuários/Funcionários
+      const { data: registryData, error: registryError } = await supabase
         .from('smokings_registry')
         .select('*')
-        .eq('ownerEmail', ownerEmail);
+        .eq('ownerEmail', normalizedOwnerEmail);
 
-      if (data && !error) {
+      if (registryData && !registryError) {
         const localRegistry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-        data.forEach(reg => {
+        registryData.forEach(reg => {
           localRegistry[reg.email] = reg;
         });
         localStorage.setItem("smokings_registry", JSON.stringify(localRegistry));
       }
+
+      // 2. Sincronizar PRODUTOS
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('owner_email', normalizedOwnerEmail);
+
+      if (productsData && !productsError) {
+        setProducts(productsData);
+        localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(productsData));
+      }
+
+      // 3. Sincronizar VENDAS
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('owner_email', normalizedOwnerEmail);
+
+      if (salesData && !salesError) {
+        setSales(salesData);
+        localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(salesData));
+      }
+
+      console.log("Sincronização com Supabase concluída com sucesso.");
     } catch (err) {
       console.warn("Erro ao sincronizar com Supabase:", err);
     }
