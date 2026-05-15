@@ -36,6 +36,9 @@ export default function FuncionariosPage() {
   const { toast } = useToast();
 
   const handleSync = async () => {
+    // Permitir se for dono OU se for o e-mail mestre
+    if (!user?.isOwner && user?.email !== 'smokings@smokings.com') return;
+    
     setIsSyncing(true);
     toast("Sincronizando equipe com a nuvem...", "info");
     
@@ -122,7 +125,7 @@ export default function FuncionariosPage() {
           <p className="text-xs md:text-sm text-slate-500 font-medium">Controle acessos e permissões dos seus funcionários.</p>
         </div>
         <div className="flex gap-2">
-          {user?.isOwner && (
+          {(user?.isOwner || user?.email === 'smokings@smokings.com') && (
             <Button 
               variant="outline" 
               size="lg"
