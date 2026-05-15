@@ -398,57 +398,88 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // 1. Sincronizar Produtos
       if (products.length > 0) {
+        console.log("Sincronizando produtos...");
         const { error: pError } = await supabase.from('products').upsert(
-          products.map(p => ({ ...p, owner_email: ownerEmail }))
+          products.map(p => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            category: p.category,
+            stock: p.stock,
+            owner_email: ownerEmail
+          }))
         );
-        if (pError) throw pError;
+        if (pError) throw new Error(`Erro Produtos: ${pError.message}`);
       }
 
       // 2. Sincronizar Vendas
       if (sales.length > 0) {
+        console.log("Sincronizando vendas...");
         const { error: sError } = await supabase.from('sales').upsert(
-          sales.map(s => ({ ...s, owner_email: ownerEmail }))
+          sales.map(s => ({
+            id: s.id,
+            product: s.product,
+            amount: s.amount,
+            quantity: s.quantity,
+            date: s.date,
+            owner_email: ownerEmail
+          }))
         );
-        if (sError) throw sError;
+        if (sError) throw new Error(`Erro Vendas: ${sError.message}`);
       }
 
       // 3. Sincronizar Comandas
       if (comandas.length > 0) {
+        console.log("Sincronizando comandas...");
         const { error: cError } = await supabase.from('comandas').upsert(
           comandas.map(c => ({ 
-            ...c, 
-            owner_email: ownerEmail,
-            // Mapear para o banco (caso as colunas sejam minúsculas)
-            customername: c.customerName,
-            tablenumber: c.tableNumber
+            id: c.id,
+            customerName: c.customerName,
+            tableNumber: c.tableNumber,
+            items: c.items,
+            status: c.status,
+            date: c.date,
+            owner_email: ownerEmail
           }))
         );
-        if (cError) throw cError;
+        if (cError) throw new Error(`Erro Comandas: ${cError.message}`);
       }
 
       // 4. Sincronizar Notinhas
       if (notinhas.length > 0) {
+        console.log("Sincronizando notinhas...");
         const { error: nError } = await supabase.from('notinhas').upsert(
           notinhas.map(n => ({ 
-            ...n, 
-            owner_email: ownerEmail,
-            customername: n.customerName
+            id: n.id,
+            customerName: n.customerName,
+            items: n.items,
+            status: n.status,
+            date: n.date,
+            owner_email: ownerEmail
           }))
         );
-        if (nError) throw nError;
+        if (nError) throw new Error(`Erro Notinhas: ${nError.message}`);
       }
 
       // 5. Sincronizar Clientes
       if (customers.length > 0) {
+        console.log("Sincronizando clientes...");
         const { error: custError } = await supabase.from('customers').upsert(
-          customers.map(c => ({ ...c, owner_email: ownerEmail }))
+          customers.map(c => ({
+            id: c.id,
+            name: c.name,
+            email: c.email,
+            phone: c.phone,
+            isVip: c.isVip,
+            owner_email: ownerEmail
+          }))
         );
-        if (custError) throw custError;
+        if (custError) throw new Error(`Erro Clientes: ${custError.message}`);
       }
 
       return true;
-    } catch (err) {
-      console.error("Erro crítico na sincronização total:", err);
+    } catch (err: any) {
+      console.error("FALHA NA SINCRONIZAÇÃO:", err.message);
       return false;
     }
   };
