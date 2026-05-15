@@ -264,11 +264,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!productsError) {
-        console.log("Produtos na nuvem:", productsData?.length || 0);
-        const finalProducts = productsData || [];
-        setProducts(finalProducts);
-        localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(finalProducts));
+      if (!productsError && productsData && productsData.length > 0) {
+        console.log("Produtos na nuvem:", productsData.length);
+        setProducts(productsData);
+        localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(productsData));
       }
 
       // 2. Sincronizar VENDAS
@@ -277,11 +276,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!salesError) {
-        console.log("Vendas na nuvem:", salesData?.length || 0);
-        const finalSales = salesData || [];
-        setSales(finalSales);
-        localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(finalSales));
+      if (!salesError && salesData && salesData.length > 0) {
+        console.log("Vendas na nuvem:", salesData.length);
+        setSales(salesData);
+        localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(salesData));
       }
 
       // 3. Sincronizar COMANDAS
@@ -290,7 +288,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!comandasError) {
+      if (!comandasError && comandasData && comandasData.length > 0) {
         const finalComandas = (comandasData || []).map(c => ({
           ...c,
           customerName: c.customerName || c.customername,
@@ -306,7 +304,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!notinhasError) {
+      if (!notinhasError && notinhasData && notinhasData.length > 0) {
         const finalNotinhas = (notinhasData || []).map(n => ({
           ...n,
           customerName: n.customerName || n.customername
@@ -321,9 +319,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
         
-      if (customersData && !customersError) {
+      if (!customersError && customersData && customersData.length > 0) {
         setCustomers(customersData);
         localStorage.setItem(`smokings_customers_${normalizedOwnerEmail}`, JSON.stringify(customersData));
+      }
+
+      // 6. Sincronizar DESPESAS
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('owner_email', normalizedOwnerEmail);
+        
+      if (!expensesError && expensesData && expensesData.length > 0) {
+        setExpenses(expensesData);
+        localStorage.setItem(`smokings_expenses_${normalizedOwnerEmail}`, JSON.stringify(expensesData));
       }
 
       return true;
@@ -338,7 +347,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("smokings_user");
   };
 
-  const clearAllData = () => {
+  const clearAllData = async () => {
     if (typeof window !== "undefined") {
       // Limpa TUDO o que começa com smokings_
       Object.keys(localStorage).forEach(key => {
@@ -347,6 +356,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       });
     }
+    
+    // Se estiver logado e for dono, tenta limpar na nuvem também
+    if (user && (user.isOwner || user.email === 'smokings@smokings.com')) {
+      const ownerEmail = user.email.toLowerCase().trim();
+      console.log("LIMPANDO DADOS NA NUVEM PARA:", ownerEmail);
+      
+      try {
+        await Promise.all([
+          supabase.from('sales').delete().eq('owner_email', ownerEmail),
+          supabase.from('products').delete().eq('owner_email', ownerEmail),
+          supabase.from('comandas').delete().eq('owner_email', ownerEmail),
+          supabase.from('notinhas').delete().eq('owner_email', ownerEmail),
+          supabase.from('customers').delete().eq('owner_email', ownerEmail),
+          supabase.from('expenses').delete().eq('owner_email', ownerEmail)
+        ]);
+        console.log("Nuvem limpa com sucesso.");
+      } catch (err) {
+        console.error("Erro ao limpar nuvem:", err);
+      }
+    }
+
     setSales([]);
     setNotinhas([]);
     setProducts([]);
@@ -355,12 +385,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setExpenses([]);
     setCustomers([]);
     setNotifications([]);
-    
-    // Se estiver logado, tenta puxar o que tem na nuvem (que deve estar limpo)
-    if (user) {
-      const ownerPrefix = user.isOwner ? user.email.toLowerCase().trim() : (user.ownerEmail?.toLowerCase().trim() || user.email.toLowerCase().trim());
-      syncWithSupabase(ownerPrefix);
-    }
   };
 
   const addNotification = (notifData: Omit<Notification, 'id' | 'date' | 'read'>) => {
@@ -489,6 +513,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (custError) throw new Error(`Erro Clientes: ${custError.message}`);
       }
 
+      // 6. Sincronizar Despesas
+      if (expenses.length > 0) {
+        console.log("Sincronizando despesas...");
+        const { error: expError } = await supabase.from('expenses').upsert(
+          expenses.map(e => ({
+            id: e.id || Math.random().toString(36).substr(2, 9),
+            description: e.description,
+            amount: e.amount,
+            category: e.category,
+            date: e.date || new Date().toISOString(),
+            owner_email: ownerEmail
+          }))
+        );
+        if (expError) throw new Error(`Erro Despesas: ${expError.message}`);
+      }
+
       return true;
     } catch (err: any) {
       console.error("FALHA NA SINCRONIZAÇÃO:", err.message);
@@ -532,31 +572,76 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Funções de Produtos
-  const addProduct = (productData: Omit<Product, 'id'>) => {
+  const addProduct = async (productData: Omit<Product, 'id'>) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     const newProduct: Product = {
       ...productData,
       id: Math.random().toString(36).substr(2, 9),
       stock: productData.stock || 0,
     };
+    
     setProducts(prev => [newProduct, ...prev]);
+
+    try {
+      await supabase.from('products').upsert([{
+        ...newProduct,
+        owner_email: ownerPrefix
+      }]);
+    } catch (err) {
+      console.warn("Erro ao salvar produto na nuvem:", err);
+    }
   };
 
-  const updateProduct = (id: string, productUpdate: Partial<Product>) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...productUpdate } : p));
-  };
-
-  const deleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
-  };
-
-  const updateStock = (id: string, delta: number) => {
-    setProducts(prev => prev.map(p => {
-      if (p.id === id) {
-        const newStock = Math.max(0, p.stock + delta);
-        return { ...p, stock: newStock };
+  const updateProduct = async (id: string, productUpdate: Partial<Product>) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
+    setProducts(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, ...productUpdate } : p);
+      const product = updated.find(p => p.id === id);
+      if (product) {
+        supabase.from('products').upsert([{
+          ...product,
+          owner_email: ownerPrefix
+        }]).then(({error}) => {
+          if (error) console.error("Erro ao atualizar produto na nuvem:", error);
+        });
       }
-      return p;
-    }));
+      return updated;
+    });
+  };
+
+  const deleteProduct = async (id: string) => {
+    setProducts(prev => prev.filter(p => p.id !== id));
+    try {
+      await supabase.from('products').delete().eq('id', id);
+    } catch (err) {
+      console.error("Erro ao deletar produto na nuvem:", err);
+    }
+  };
+
+  const updateStock = async (id: string, delta: number) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
+    setProducts(prev => {
+      const updated = prev.map(p => {
+        if (p.id === id) {
+          const newStock = Math.max(0, p.stock + delta);
+          const updatedProduct = { ...p, stock: newStock };
+          
+          supabase.from('products').upsert([{
+            ...updatedProduct,
+            owner_email: ownerPrefix
+          }]).then(({error}) => {
+            if (error) console.error("Erro ao atualizar estoque na nuvem:", error);
+          });
+          
+          return updatedProduct;
+        }
+        return p;
+      });
+      return updated;
+    });
   };
 
   // Funções de Comandas
@@ -582,6 +667,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addItemToComanda = async (comandaId: string, item: ComandaItem) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     setComandas(prev => {
       const newComandas = prev.map(c => {
         if (c.id === comandaId) {
@@ -594,7 +681,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           } else {
             newItems = [...c.items, item];
           }
-          const updatedComanda = { ...c, items: newItems };
+          const updatedComanda = { ...c, items: newItems, owner_email: ownerPrefix };
           
           // Sync to Supabase
           supabase.from('comandas').upsert([updatedComanda]).then(({error}) => {
@@ -610,6 +697,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateComandaItem = async (comandaId: string, productId: string, quantity: number) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     setComandas(prev => {
       const newComandas = prev.map(c => {
         if (c.id === comandaId) {
@@ -619,7 +708,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           } else {
             newItems = c.items.map(i => i.productId === productId ? { ...i, quantity } : i);
           }
-          const updatedComanda = { ...c, items: newItems };
+          const updatedComanda = { ...c, items: newItems, owner_email: ownerPrefix };
           
           // Sync to Supabase
           supabase.from('comandas').upsert([updatedComanda]).then(({error}) => {
@@ -635,6 +724,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const payComanda = async (id: string) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     const comanda = comandas.find(c => c.id === id);
     if (comanda && comanda.status === 'aberta') {
       // Adicionar cada item ao faturamento (sales)
@@ -646,7 +737,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       });
       
-      const updatedComanda = { ...comanda, status: 'paga' };
+      const updatedComanda = { ...comanda, status: 'paga', owner_email: ownerPrefix };
       setComandas(prev => prev.map(c => c.id === id ? updatedComanda : c));
       
       try {
@@ -664,10 +755,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateComanda = async (id: string, comandaUpdate: Partial<Comanda>) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     setComandas(prev => {
       const newComandas = prev.map(c => {
         if (c.id === id) {
-          const updatedComanda = { ...c, ...comandaUpdate };
+          const updatedComanda = { ...c, ...comandaUpdate, owner_email: ownerPrefix };
           supabase.from('comandas').upsert([updatedComanda]).then(({error}) => {
             if (error) console.error("Erro ao atualizar comanda:", error);
           });
@@ -702,6 +795,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addItemToNotinha = async (notinhaId: string, item: NotinhaItem) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     setNotinhas(prev => {
       const newNotinhas = prev.map(n => {
         if (n.id === notinhaId) {
@@ -714,7 +809,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           } else {
             newItems = [...n.items, item];
           }
-          const updatedNotinha = { ...n, items: newItems };
+          const updatedNotinha = { ...n, items: newItems, owner_email: ownerPrefix };
           
           supabase.from('notinhas').upsert([updatedNotinha]).then(({error}) => {
             if (error) console.error("Erro ao atualizar itens da notinha:", error);
@@ -729,6 +824,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateNotinhaItem = async (notinhaId: string, productId: string, quantity: number) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     setNotinhas(prev => {
       const newNotinhas = prev.map(n => {
         if (n.id === notinhaId) {
@@ -738,7 +835,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           } else {
             newItems = n.items.map(i => i.productId === productId ? { ...i, quantity } : i);
           }
-          const updatedNotinha = { ...n, items: newItems };
+          const updatedNotinha = { ...n, items: newItems, owner_email: ownerPrefix };
           
           supabase.from('notinhas').upsert([updatedNotinha]).then(({error}) => {
             if (error) console.error("Erro ao atualizar quantidade da notinha:", error);
@@ -753,10 +850,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateNotinha = async (id: string, notinhaUpdate: Partial<Notinha>) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     setNotinhas(prev => {
       const newNotinhas = prev.map(n => {
         if (n.id === id) {
-          const updatedNotinha = { ...n, ...notinhaUpdate };
+          const updatedNotinha = { ...n, ...notinhaUpdate, owner_email: ownerPrefix };
           supabase.from('notinhas').upsert([updatedNotinha]).then(({error}) => {
             if (error) console.error("Erro ao atualizar notinha:", error);
           });
@@ -769,6 +868,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const payNotinha = async (id: string) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
     const notinha = notinhas.find(n => n.id === id);
     if (notinha && notinha.status === 'pendente') {
       // Adicionar cada item ao faturamento
@@ -780,7 +881,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       });
       
-      const updatedNotinha = { ...notinha, status: 'pago' };
+      const updatedNotinha = { ...notinha, status: 'pago', owner_email: ownerPrefix };
       setNotinhas(prev => prev.map(n => n.id === id ? updatedNotinha : n));
 
       try {
@@ -899,8 +1000,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const addExpense = (exp: any) => {
-    setExpenses(prev => [exp, ...prev]);
+  const addExpense = async (exp: any) => {
+    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    
+    const newExpense = {
+      ...exp,
+      id: exp.id || Math.random().toString(36).substr(2, 9),
+      date: exp.date || new Date().toISOString(),
+      owner_email: ownerPrefix
+    };
+
+    setExpenses(prev => [newExpense, ...prev]);
+
+    try {
+      await supabase.from('expenses').upsert([newExpense]);
+    } catch (err) {
+      console.warn("Erro ao salvar despesa na nuvem:", err);
+    }
+
     addNotification({
       title: "Nova Despesa",
       message: `Gasto de ${exp.amount} registrado em ${exp.category}.`,
