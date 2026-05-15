@@ -40,13 +40,18 @@ export default function LoginPage() {
         if (isSupabaseConfigured) {
           try {
             console.log("Consultando Supabase para:", normalizedEmail);
+            // Primeiro, verificar se a tabela existe e o usuário está lá
             const { data: userFound, error } = await supabase
               .from('smokings_registry')
               .select('*')
               .eq('email', normalizedEmail)
               .maybeSingle();
 
-            if (userFound && !error) {
+            if (error) {
+              console.error("Erro na consulta Supabase:", error);
+            }
+
+            if (userFound) {
               console.log("Usuário encontrado no Supabase:", userFound);
               if (userFound.password === password) {
                 const userData = {
@@ -68,22 +73,34 @@ export default function LoginPage() {
                 toast("Senha incorreta.", "error");
                 return;
               }
-            } else if (error) {
-              console.error("Erro na consulta Supabase:", error);
-            } else {
-              console.log("Nenhum usuário encontrado no Supabase para este email.");
             }
           } catch (supabaseErr) {
             console.warn("Erro ao consultar Supabase, tentando local...", supabaseErr);
           }
         }
 
-        // 2. Fallback: Tentar buscar no localStorage (apenas para o navegador atual)
+        // 2. Se for o DONO MESTRE (maaiconruiz2345@gmail.com) e não estiver no Supabase ainda
+        if (normalizedEmail === "maaiconruiz2345@gmail.com") {
+          const masterUser = {
+            name: "Maaicon Ruiz",
+            email: normalizedEmail,
+            isOwner: true,
+            ownerEmail: normalizedEmail,
+            permissions: ["financeiro", "vendas", "produtos", "equipe", "crm"]
+          };
+          login(masterUser);
+          localStorage.setItem("smokings_user", JSON.stringify(masterUser));
+          setIsLoading(false);
+          toast("Bem-vindo, Dono!");
+          router.push("/dashboard");
+          return;
+        }
+
+        // 3. Fallback: Tentar buscar no localStorage
         const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
         const localUser = registry[normalizedEmail];
 
         if (localUser) {
-          console.log("Usuário encontrado no localStorage:", localUser);
           if (localUser.password === password) {
             const userData = {
               name: localUser.name,
@@ -94,7 +111,6 @@ export default function LoginPage() {
             };
             login(userData);
             localStorage.setItem("smokings_user", JSON.stringify(userData));
-            
             setIsLoading(false);
             toast(`Bem-vindo, ${localUser.name}!`);
             router.push("/dashboard");
@@ -111,7 +127,7 @@ export default function LoginPage() {
       } catch (err) {
         console.error("Erro crítico no login:", err);
         setIsLoading(false);
-        toast("Erro ao conectar. Verifique as chaves no Render.", "error");
+        toast("Erro ao conectar com o servidor.", "error");
       }
     }, 1000);
   };
