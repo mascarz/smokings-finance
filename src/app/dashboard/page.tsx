@@ -29,13 +29,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { useApp } from "@/lib/context";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const { sales, notinhas, expenses, customers } = useApp();
+  const { sales, notinhas, expenses, customers, user, syncAllDataToCloud } = useApp();
+  const [isSyncing, setIsSyncing] = React.useState(false);
+
+  const handleSyncAll = async () => {
+    if (!user?.isOwner) return;
+    setIsSyncing(true);
+    toast("Sincronizando banco de dados completo...", "info");
+    
+    const success = await syncAllDataToCloud();
+    
+    setIsSyncing(false);
+    if (success) {
+      toast("Banco de dados sincronizado com a nuvem!");
+    } else {
+      toast("Erro ao sincronizar. Tente novamente.", "error");
+    }
+  };
 
   const getChartData = () => {
     const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -127,6 +143,18 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex flex-col gap-3 w-full md:w-auto">
+            {user?.isOwner && (
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={handleSyncAll}
+                disabled={isSyncing}
+                className="w-full md:w-auto gap-2 h-12 md:h-14 bg-white/5 border-white/10 text-white hover:bg-white/10"
+              >
+                <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
+                {isSyncing ? "Sincronizando..." : "Sincronizar Banco"}
+              </Button>
+            )}
             <Button variant="premium" size="lg" className="w-full md:w-auto gap-2 group h-12 md:h-14 bg-gold-600 hover:bg-gold-700 text-black font-black shadow-xl shadow-gold-500/20">
               Relatório Completo
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />

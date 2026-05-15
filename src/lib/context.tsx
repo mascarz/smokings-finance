@@ -104,7 +104,8 @@ interface AppContextType {
   clearAllData: () => void;
   registerUser: (userData: any) => void;
   forceSyncEmployees: () => Promise<boolean>;
-}
+    syncAllDataToCloud: () => Promise<boolean>;
+  }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -269,6 +270,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (err) {
       console.error("Erro na sincronização forçada:", err);
+      return false;
+    }
+  };
+
+  const syncAllDataToCloud = async () => {
+    if (!user || !user.isOwner) return false;
+    const ownerEmail = user.email.toLowerCase().trim();
+
+    try {
+      console.log("Iniciando sincronização total para:", ownerEmail);
+
+      // 1. Sincronizar Produtos
+      if (products.length > 0) {
+        const productsToSync = products.map(p => ({ ...p, owner_email: ownerEmail }));
+        const { error: pError } = await supabase.from('products').upsert(productsToSync);
+        if (pError) console.error("Erro produtos:", pError);
+      }
+
+      // 2. Sincronizar Vendas
+      if (sales.length > 0) {
+        const salesToSync = sales.map(s => ({ ...s, owner_email: ownerEmail }));
+        const { error: sError } = await supabase.from('sales').upsert(salesToSync);
+        if (sError) console.error("Erro vendas:", sError);
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Erro crítico na sincronização total:", err);
       return false;
     }
   };
@@ -587,8 +616,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addNotinha, addItemToNotinha, updateNotinhaItem, updateNotinha, payNotinha, 
       addEmployee, deleteEmployee, updateEmployeePermissions, addExpense, addCustomer,
       addNotification, markNotificationAsRead, clearNotifications, clearAllData, registerUser,
-      forceSyncEmployees
-    }}>
+       forceSyncEmployees, syncAllDataToCloud
+     }}>
       {children}
     </AppContext.Provider>
   );
