@@ -40,7 +40,8 @@ export default function DashboardPage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSyncAll = async () => {
-    if (!user?.isOwner) return;
+    // Permitir se for dono OU se for o e-mail mestre
+    if (!user?.isOwner && user?.email !== 'smokings@smokings.com') return;
     setIsSyncing(true);
     toast("Sincronizando banco de dados completo...", "info");
     
@@ -144,7 +145,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex flex-col gap-3 w-full md:w-auto">
-            {user?.isOwner && (
+            {(user?.isOwner || user?.email === 'smokings@smokings.com') && (
               <Button 
                 variant="outline" 
                 size="lg" 
