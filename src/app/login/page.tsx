@@ -33,47 +33,47 @@ export default function LoginPage() {
 
       try {
         // 1. Tentar buscar no registro global do Supabase (para permitir login em qualquer aparelho)
-        const isSupabaseConfigured = 
-          process.env.NEXT_PUBLIC_SUPABASE_URL && 
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && 
-          !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('sb_publishable');
+        console.log("Iniciando busca no Supabase para:", normalizedEmail);
+        
+        try {
+          // Busca direta sem travas de verificação de ambiente local
+          const { data: userFound, error: supabaseError } = await supabase
+            .from('smokings_registry')
+            .select('*')
+            .eq('email', normalizedEmail)
+            .maybeSingle();
 
-        if (isSupabaseConfigured) {
-          try {
-            console.log("Consultando Supabase para:", normalizedEmail);
-            // Primeiro, verificar se a tabela existe e o usuário está lá
-            const { data: userFound, error } = await supabase
-              .from('smokings_registry')
-              .select('*')
-              .eq('email', normalizedEmail)
-              .maybeSingle();
-
-            if (userFound) {
-              console.log("Usuário encontrado no Supabase:", userFound);
-              if (userFound.password === password) {
-                const userData = {
-                  name: userFound.name,
-                  email: userFound.email,
-                  isOwner: userFound.isOwner,
-                  ownerEmail: userFound.ownerEmail,
-                  permissions: userFound.permissions || []
-                };
-                login(userData);
-                localStorage.setItem("smokings_user", JSON.stringify(userData));
-                
-                setIsLoading(false);
-                toast(`Bem-vindo, ${userFound.name}!`);
-                router.push("/dashboard");
-                return;
-              } else {
-                setIsLoading(false);
-                toast("Senha incorreta.", "error");
-                return;
-              }
-            }
-          } catch (supabaseErr) {
-            console.warn("Erro ao consultar Supabase, tentando local...", supabaseErr);
+          if (supabaseError) {
+            console.error("Erro na consulta Supabase:", supabaseError);
           }
+
+          if (userFound) {
+            console.log("Usuário encontrado no Supabase:", userFound);
+            if (userFound.password === password) {
+              const userData = {
+                name: userFound.name,
+                email: userFound.email,
+                isOwner: userFound.isOwner,
+                ownerEmail: userFound.ownerEmail,
+                permissions: userFound.permissions || []
+              };
+              login(userData);
+              localStorage.setItem("smokings_user", JSON.stringify(userData));
+              
+              setIsLoading(false);
+              toast(`Bem-vindo, ${userFound.name}!`);
+              router.push("/dashboard");
+              return;
+            } else {
+              setIsLoading(false);
+              toast("Senha incorreta.", "error");
+              return;
+            }
+          } else {
+            console.log("Nenhum usuário encontrado no Supabase para este e-mail.");
+          }
+        } catch (supabaseErr) {
+          console.warn("Erro crítico na comunicação com Supabase:", supabaseErr);
         }
 
         // 2. Se for o DONO MESTRE (maaiconruiz2345@gmail.com) e não estiver no Supabase ainda
