@@ -31,8 +31,7 @@ export default function LoginPage() {
       console.log("Tentando login para:", normalizedEmail);
 
       try {
-        // 1. Tentar buscar no registro global do Supabase (apenas se as chaves estiverem corretas)
-        // Se a chave começar com 'sb_publishable', ela é do Clerk e vai dar erro no Supabase
+        // 1. Tentar buscar no registro global do Supabase (para permitir login em qualquer aparelho)
         const isSupabaseConfigured = 
           process.env.NEXT_PUBLIC_SUPABASE_URL && 
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && 
@@ -44,18 +43,22 @@ export default function LoginPage() {
               .from('smokings_registry')
               .select('*')
               .eq('email', normalizedEmail)
-              .maybeSingle(); // Usar maybeSingle para evitar erro de 'single' quando não acha nada
+              .maybeSingle();
 
             if (userFound && !error) {
               console.log("Usuário encontrado no Supabase:", userFound);
               if (userFound.password === password) {
-                login({
+                const userData = {
                   name: userFound.name,
                   email: userFound.email,
                   isOwner: userFound.isOwner,
                   ownerEmail: userFound.ownerEmail,
                   permissions: userFound.permissions || []
-                });
+                };
+                login(userData);
+                // Persistir no localStorage para o navegador lembrar
+                localStorage.setItem("smokings_user", JSON.stringify(userData));
+                
                 setIsLoading(false);
                 toast(`Bem-vindo, ${userFound.name}!`);
                 router.push("/dashboard");
@@ -67,7 +70,7 @@ export default function LoginPage() {
               }
             }
           } catch (supabaseErr) {
-            console.warn("Supabase não respondeu ou tabela não existe, tentando local...", supabaseErr);
+            console.warn("Erro ao consultar Supabase, tentando local...", supabaseErr);
           }
         }
 
@@ -78,13 +81,16 @@ export default function LoginPage() {
         if (localUser) {
           console.log("Usuário encontrado no localStorage:", localUser);
           if (localUser.password === password) {
-            login({
+            const userData = {
               name: localUser.name,
               email: localUser.email,
               isOwner: localUser.isOwner,
               ownerEmail: localUser.ownerEmail,
               permissions: localUser.permissions || []
-            });
+            };
+            login(userData);
+            localStorage.setItem("smokings_user", JSON.stringify(userData));
+            
             setIsLoading(false);
             toast(`Bem-vindo, ${localUser.name}!`);
             router.push("/dashboard");
@@ -96,21 +102,12 @@ export default function LoginPage() {
           }
         }
 
-        // 3. Se não encontrar em lugar nenhum
         setIsLoading(false);
         toast("E-mail não cadastrado.", "error");
       } catch (err) {
         console.error("Erro crítico no login:", err);
         setIsLoading(false);
-        // Tentar login local mesmo em erro crítico
-        const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-        if (registry[normalizedEmail] && registry[normalizedEmail].password === password) {
-          const u = registry[normalizedEmail];
-          login({ ...u, permissions: u.permissions || [] });
-          router.push("/dashboard");
-        } else {
-          toast("Erro ao conectar. Verifique as chaves no Render.", "error");
-        }
+        toast("Erro ao conectar. Verifique as chaves no Render.", "error");
       }
     }, 1000);
   };

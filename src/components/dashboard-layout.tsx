@@ -72,6 +72,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const { user, logout: contextLogout } = useApp();
 
+  // Proteção de rota simplificada
+  React.useEffect(() => {
+    const savedUser = localStorage.getItem("smokings_user");
+    if (!savedUser && !pathname.includes("/login") && !pathname.includes("/register")) {
+      router.push("/login");
+    }
+  }, [pathname, router]);
+
   const handleLogout = () => {
     toast("Saindo do sistema...", "info");
     setTimeout(() => {
