@@ -211,45 +211,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const normalizedOwnerEmail = ownerEmail.toLowerCase().trim();
       console.log("Sincronizando banco de dados da nuvem para:", normalizedOwnerEmail);
 
-      // 1. Sincronizar Registro de Usuários/Funcionários
-      const { data: registryData, error: registryError } = await supabase
-        .from('smokings_registry')
-        .select('*')
-        .eq('ownerEmail', normalizedOwnerEmail);
-
-      if (registryData && !registryError) {
-        const localRegistry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
-        registryData.forEach(reg => {
-          localRegistry[reg.email] = reg;
-        });
-        localStorage.setItem("smokings_registry", JSON.stringify(localRegistry));
-      }
-
-      // 2. Sincronizar PRODUTOS
+      // 1. Sincronizar PRODUTOS
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
       if (productsData && !productsError) {
+        console.log("Produtos baixados:", productsData.length);
         setProducts(productsData);
         localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(productsData));
       }
 
-      // 3. Sincronizar VENDAS
+      // 2. Sincronizar VENDAS
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
       if (salesData && !salesError) {
+        console.log("Vendas baixadas:", salesData.length);
         setSales(salesData);
         localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(salesData));
       }
 
-      console.log("Sincronização com Supabase concluída com sucesso.");
+      // 3. Sincronizar CLIENTES
+      const { data: customersData, error: customersError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('owner_email', normalizedOwnerEmail);
+        
+      if (customersData && !customersError) {
+        setCustomers(customersData);
+        localStorage.setItem(`smokings_customers_${normalizedOwnerEmail}`, JSON.stringify(customersData));
+      }
+
+      return true;
     } catch (err) {
       console.warn("Erro ao sincronizar com Supabase:", err);
+      return false;
     }
   };
 
