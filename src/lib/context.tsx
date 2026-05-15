@@ -415,9 +415,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addEmployee = (emp: any) => {
+  const addEmployee = async (emp: any) => {
     const normalizedEmail = emp.email.toLowerCase().trim();
-    // Garante que o funcionário tenha ao menos a permissão de vendas
     const permissions = emp.permissions && emp.permissions.length > 0 ? emp.permissions : ["vendas"];
     const newEmp = { ...emp, email: normalizedEmail, permissions };
     
@@ -427,7 +426,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return [newEmp, ...prev];
     });
     
-    // Registrar funcionário no sistema global (localStorage) para permitir login
+    // Registrar funcionário no sistema global (localStorage)
     if (typeof window !== "undefined" && user) {
       const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
       const employeeData = {
@@ -435,17 +434,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         email: normalizedEmail,
         password: "123", // Senha padrão obrigatória
         isOwner: false,
-        ownerEmail: user.email.toLowerCase().trim(), // Vincula ao e-mail do dono atual
+        ownerEmail: user.email.toLowerCase().trim(),
         permissions: permissions
       };
       registry[normalizedEmail] = employeeData;
       localStorage.setItem("smokings_registry", JSON.stringify(registry));
       
       // Salvar no Supabase para acesso em outros aparelhos
-      saveToSupabaseRegistry(employeeData);
+      await saveToSupabaseRegistry(employeeData);
       
-      // DEBUG: Mostrar no console para conferência
-      console.log("Funcionário registrado no sistema:", registry[normalizedEmail]);
+      console.log("Funcionário registrado com sucesso:", normalizedEmail);
     }
 
     addNotification({
@@ -457,9 +455,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const saveToSupabaseRegistry = async (userData: any) => {
     try {
-      await supabase.from('smokings_registry').upsert([userData]);
+      const { error } = await supabase.from('smokings_registry').upsert([userData]);
+      if (error) throw error;
+      console.log("Dados salvos no Supabase com sucesso.");
     } catch (err) {
-      console.warn("Erro ao salvar no Supabase (verifique se a tabela existe):", err);
+      console.error("ERRO ao salvar no Supabase:", err);
     }
   };
 
@@ -479,17 +479,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const registerUser = (userData: any) => {
+  const registerUser = async (userData: any) => {
     if (typeof window !== "undefined") {
-      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
       const normalizedEmail = userData.email.toLowerCase().trim();
-      registry[normalizedEmail] = {
+      const registryData = {
         ...userData,
         email: normalizedEmail,
         isOwner: true,
         ownerEmail: normalizedEmail
       };
+      
+      const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
+      registry[normalizedEmail] = registryData;
       localStorage.setItem("smokings_registry", JSON.stringify(registry));
+      
+      await saveToSupabaseRegistry(registryData);
     }
   };
 
