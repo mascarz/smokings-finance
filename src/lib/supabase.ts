@@ -1,10 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Essas variáveis devem ser configuradas no arquivo .env.local
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://your-project.supabase.co";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "your-anon-key";
+// Essas variáveis devem ser configuradas no arquivo .env.local ou no painel do Render
+const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn("AVISO: Chaves do Supabase não encontradas. Verifique as variáveis de ambiente.");
+}
+
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.supabase.co", 
+  supabaseAnonKey || "placeholder-key"
+);
 
 export type Profile = {
   id: string;
