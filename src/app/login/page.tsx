@@ -29,32 +29,37 @@ export default function LoginPage() {
     // Simular delay de rede
     setTimeout(async () => {
       const normalizedEmail = email.toLowerCase().trim();
+      const rawEmail = email.trim();
       console.log("Tentando login para:", normalizedEmail);
 
       try {
-        // 1. Tentar buscar no registro global do Supabase (para permitir login em qualquer aparelho)
-        console.log("Iniciando busca no Supabase para:", normalizedEmail);
-        
+        // 1. Busca direta no Supabase (com suporte a busca flexível e debug)
         try {
-          // Busca direta sem travas de verificação de ambiente local
+          console.log("Iniciando busca no Supabase para:", normalizedEmail);
+          
           const { data: userFound, error: supabaseError } = await supabase
             .from('smokings_registry')
             .select('*')
-            .eq('email', normalizedEmail)
+            .or(`email.eq.${normalizedEmail},email.eq.${rawEmail}`)
             .maybeSingle();
 
           if (supabaseError) {
-            console.error("Erro na consulta Supabase:", supabaseError);
+            console.error("ERRO SUPABASE:", supabaseError);
+            toast("Erro de conexão com o banco.", "error");
+            setIsLoading(false);
+            return;
           }
 
           if (userFound) {
-            console.log("Usuário encontrado no Supabase:", userFound);
-            if (userFound.password === password) {
+            console.log("Usuário encontrado no Supabase!", userFound);
+            // Verificar senha (com trim e toString para maior segurança)
+            if (userFound.password?.toString().trim() === password.trim()) {
               const userData = {
                 name: userFound.name,
                 email: userFound.email,
                 isOwner: userFound.isOwner,
-                ownerEmail: userFound.ownerEmail,
+                // Fallback para campos em minúsculo no banco
+                ownerEmail: userFound.ownerEmail || userFound.owneremail,
                 permissions: userFound.permissions || []
               };
               login(userData);
@@ -69,11 +74,10 @@ export default function LoginPage() {
               toast("Senha incorreta.", "error");
               return;
             }
-          } else {
-            console.log("Nenhum usuário encontrado no Supabase para este e-mail.");
           }
+          console.log("Nenhum usuário encontrado no Supabase para este e-mail.");
         } catch (supabaseErr) {
-          console.warn("Erro crítico na comunicação com Supabase:", supabaseErr);
+          console.warn("Erro na comunicação com Supabase:", supabaseErr);
         }
 
         // 2. Se for o DONO MESTRE (maaiconruiz2345@gmail.com) e não estiver no Supabase ainda
