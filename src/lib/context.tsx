@@ -264,10 +264,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (productsData && !productsError) {
-        console.log("Produtos baixados:", productsData.length);
-        setProducts(productsData);
-        localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(productsData));
+      if (!productsError) {
+        console.log("Produtos na nuvem:", productsData?.length || 0);
+        const finalProducts = productsData || [];
+        setProducts(finalProducts);
+        localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(finalProducts));
       }
 
       // 2. Sincronizar VENDAS
@@ -276,10 +277,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (salesData && !salesError) {
-        console.log("Vendas baixadas:", salesData.length);
-        setSales(salesData);
-        localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(salesData));
+      if (!salesError) {
+        console.log("Vendas na nuvem:", salesData?.length || 0);
+        const finalSales = salesData || [];
+        setSales(finalSales);
+        localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(finalSales));
       }
 
       // 3. Sincronizar COMANDAS
@@ -288,16 +290,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (comandasData && !comandasError && comandasData.length > 0) {
-        console.log("Comandas baixadas:", comandasData.length);
-        // Mapear campos do banco (minúsculo) para o código (camelCase)
-        const mappedComandas = comandasData.map(c => ({
+      if (!comandasError) {
+        const finalComandas = (comandasData || []).map(c => ({
           ...c,
           customerName: c.customerName || c.customername,
           tableNumber: c.tableNumber || c.tablenumber
         }));
-        setComandas(mappedComandas);
-        localStorage.setItem(`smokings_comandas_${normalizedOwnerEmail}`, JSON.stringify(mappedComandas));
+        setComandas(finalComandas);
+        localStorage.setItem(`smokings_comandas_${normalizedOwnerEmail}`, JSON.stringify(finalComandas));
       }
 
       // 4. Sincronizar NOTINHAS
@@ -306,15 +306,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (notinhasData && !notinhasError && notinhasData.length > 0) {
-        console.log("Notinhas baixadas:", notinhasData.length);
-        // Mapear campos do banco para o código
-        const mappedNotinhas = notinhasData.map(n => ({
+      if (!notinhasError) {
+        const finalNotinhas = (notinhasData || []).map(n => ({
           ...n,
           customerName: n.customerName || n.customername
         }));
-        setNotinhas(mappedNotinhas);
-        localStorage.setItem(`smokings_notinhas_${normalizedOwnerEmail}`, JSON.stringify(mappedNotinhas));
+        setNotinhas(finalNotinhas);
+        localStorage.setItem(`smokings_notinhas_${normalizedOwnerEmail}`, JSON.stringify(finalNotinhas));
       }
 
       // 5. Sincronizar CLIENTES
@@ -341,6 +339,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearAllData = () => {
+    if (typeof window !== "undefined") {
+      // Limpa TUDO o que começa com smokings_
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith("smokings_")) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
     setSales([]);
     setNotinhas([]);
     setProducts([]);
@@ -349,6 +355,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setExpenses([]);
     setCustomers([]);
     setNotifications([]);
+    
+    // Se estiver logado, tenta puxar o que tem na nuvem (que deve estar limpo)
+    if (user) {
+      const ownerPrefix = user.isOwner ? user.email.toLowerCase().trim() : (user.ownerEmail?.toLowerCase().trim() || user.email.toLowerCase().trim());
+      syncWithSupabase(ownerPrefix);
+    }
   };
 
   const addNotification = (notifData: Omit<Notification, 'id' | 'date' | 'read'>) => {

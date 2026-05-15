@@ -1,12 +1,27 @@
 "use client";
 
 import React from "react";
-import { User, Mail, Phone, Shield, Bell, Save } from "lucide-react";
+import { User, Mail, Phone, Shield, Bell, Save, Trash2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useApp } from "@/lib/context";
+import { useToast } from "@/components/ui/toast";
 
 export default function PerfilPage() {
+  const { clearAllData, user } = useApp();
+  const { toast } = useToast();
+
+  const handleResetData = () => {
+    if (confirm("ATENÇÃO: Isso apagará todos os dados locais deste navegador e recarregará as informações da nuvem. Deseja continuar?")) {
+      clearAllData();
+      toast("Memória local limpa com sucesso!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
@@ -107,6 +122,31 @@ export default function PerfilPage() {
                   </div>
                 </div>
                 <input type="checkbox" className="w-5 h-5 accent-gold-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-destructive/20 bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
+              <CardDescription>Ações que podem afetar seus dados permanentemente.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/10">
+                <div className="flex items-center gap-3">
+                  <Trash2 size={24} className="text-destructive" />
+                  <div>
+                    <p className="text-sm font-bold text-destructive">Resetar Banco de Dados Local</p>
+                    <p className="text-xs text-muted-foreground">Limpa a memória do navegador e força o download da nuvem.</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleResetData}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCcw size={16} /> Resetar Agora
+                </Button>
               </div>
             </CardContent>
           </Card>
