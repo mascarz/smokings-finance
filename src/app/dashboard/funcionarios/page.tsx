@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/context";
 
 export default function FuncionariosPage() {
-  const { employees, addEmployee, deleteEmployee, updateEmployeePermissions, user } = useApp();
+  const { employees, addEmployee, deleteEmployee, updateEmployeePermissions, user, forceSyncEmployees } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
@@ -39,18 +39,13 @@ export default function FuncionariosPage() {
     setIsSyncing(true);
     toast("Sincronizando equipe com a nuvem...", "info");
     
-    try {
-      // O context.tsx já tem a lógica de sync no useEffect, 
-      // mas vamos forçar uma atualização aqui se necessário
-      // Na verdade, o simples fato de disparar uma mudança no state do context já ajudaria
-      // Mas vamos apenas simular um delay e dar o feedback
-      setTimeout(() => {
-        setIsSyncing(false);
-        toast("Equipe sincronizada com sucesso!");
-      }, 2000);
-    } catch (error) {
-      setIsSyncing(false);
-      toast("Erro ao sincronizar.", "error");
+    const success = await forceSyncEmployees();
+    
+    setIsSyncing(false);
+    if (success) {
+      toast("Equipe sincronizada com sucesso!");
+    } else {
+      toast("Erro ao sincronizar. Verifique a conexão.", "error");
     }
   };
 

@@ -103,6 +103,7 @@ interface AppContextType {
   clearNotifications: () => void;
   clearAllData: () => void;
   registerUser: (userData: any) => void;
+  forceSyncEmployees: () => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -245,6 +246,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       read: false
     };
     setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const forceSyncEmployees = async () => {
+    if (!user || !user.isOwner) return false;
+    
+    try {
+      const employeesToSync = employees.map(emp => ({
+        name: emp.name,
+        email: emp.email.toLowerCase().trim(),
+        password: "123",
+        isOwner: false,
+        ownerEmail: user.email.toLowerCase().trim(),
+        permissions: emp.permissions || ["vendas"]
+      }));
+
+      for (const empData of employeesToSync) {
+        await saveToSupabaseRegistry(empData);
+      }
+      return true;
+    } catch (err) {
+      console.error("Erro na sincronização forçada:", err);
+      return false;
+    }
   };
 
   const markNotificationAsRead = (id: string) => {
@@ -560,7 +584,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addComanda, addItemToComanda, updateComandaItem, payComanda, updateComanda,
       addNotinha, addItemToNotinha, updateNotinhaItem, updateNotinha, payNotinha, 
       addEmployee, deleteEmployee, updateEmployeePermissions, addExpense, addCustomer,
-      addNotification, markNotificationAsRead, clearNotifications, clearAllData, registerUser
+      addNotification, markNotificationAsRead, clearNotifications, clearAllData, registerUser,
+      forceSyncEmployees
     }}>
       {children}
     </AppContext.Provider>
