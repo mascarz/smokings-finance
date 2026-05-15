@@ -288,10 +288,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (comandasData && !comandasError) {
+      if (comandasData && !comandasError && comandasData.length > 0) {
         console.log("Comandas baixadas:", comandasData.length);
-        setComandas(comandasData);
-        localStorage.setItem(`smokings_comandas_${normalizedOwnerEmail}`, JSON.stringify(comandasData));
+        // Mapear campos do banco (minúsculo) para o código (camelCase)
+        const mappedComandas = comandasData.map(c => ({
+          ...c,
+          customerName: c.customerName || c.customername,
+          tableNumber: c.tableNumber || c.tablenumber
+        }));
+        setComandas(mappedComandas);
+        localStorage.setItem(`smokings_comandas_${normalizedOwnerEmail}`, JSON.stringify(mappedComandas));
       }
 
       // 4. Sincronizar NOTINHAS
@@ -300,10 +306,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (notinhasData && !notinhasError) {
+      if (notinhasData && !notinhasError && notinhasData.length > 0) {
         console.log("Notinhas baixadas:", notinhasData.length);
-        setNotinhas(notinhasData);
-        localStorage.setItem(`smokings_notinhas_${normalizedOwnerEmail}`, JSON.stringify(notinhasData));
+        // Mapear campos do banco para o código
+        const mappedNotinhas = notinhasData.map(n => ({
+          ...n,
+          customerName: n.customerName || n.customername
+        }));
+        setNotinhas(mappedNotinhas);
+        localStorage.setItem(`smokings_notinhas_${normalizedOwnerEmail}`, JSON.stringify(mappedNotinhas));
       }
 
       // 5. Sincronizar CLIENTES
