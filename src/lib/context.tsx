@@ -385,7 +385,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const syncAllDataToCloud = async () => {
-    if (!user || !user.isOwner) return false;
+    // Permitir se for dono OU se for o e-mail mestre
+    if (!user || (!user.isOwner && user.email !== 'smokings@smokings.com')) {
+      console.warn("Usuário sem permissão de dono para sincronizar.");
+      return false;
+    }
+    
     const ownerEmail = user.email.toLowerCase().trim();
 
     try {
@@ -393,30 +398,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // 1. Sincronizar Produtos
       if (products.length > 0) {
-        const productsToSync = products.map(p => ({ ...p, owner_email: ownerEmail }));
-        const { error: pError } = await supabase.from('products').upsert(productsToSync);
-        if (pError) console.error("Erro produtos:", pError);
+        const { error: pError } = await supabase.from('products').upsert(
+          products.map(p => ({ ...p, owner_email: ownerEmail }))
+        );
+        if (pError) throw pError;
       }
 
       // 2. Sincronizar Vendas
       if (sales.length > 0) {
-        const salesToSync = sales.map(s => ({ ...s, owner_email: ownerEmail }));
-        const { error: sError } = await supabase.from('sales').upsert(salesToSync);
-        if (sError) console.error("Erro vendas:", sError);
+        const { error: sError } = await supabase.from('sales').upsert(
+          sales.map(s => ({ ...s, owner_email: ownerEmail }))
+        );
+        if (sError) throw sError;
       }
 
       // 3. Sincronizar Comandas
       if (comandas.length > 0) {
-        const comandasToSync = comandas.map(c => ({ ...c, owner_email: ownerEmail }));
-        const { error: cError } = await supabase.from('comandas').upsert(comandasToSync);
-        if (cError) console.error("Erro comandas:", cError);
+        const { error: cError } = await supabase.from('comandas').upsert(
+          comandas.map(c => ({ 
+            ...c, 
+            owner_email: ownerEmail,
+            // Mapear para o banco (caso as colunas sejam minúsculas)
+            customername: c.customerName,
+            tablenumber: c.tableNumber
+          }))
+        );
+        if (cError) throw cError;
       }
 
       // 4. Sincronizar Notinhas
       if (notinhas.length > 0) {
-        const notinhasToSync = notinhas.map(n => ({ ...n, owner_email: ownerEmail }));
-        const { error: nError } = await supabase.from('notinhas').upsert(notinhasToSync);
-        if (nError) console.error("Erro notinhas:", nError);
+        const { error: nError } = await supabase.from('notinhas').upsert(
+          notinhas.map(n => ({ 
+            ...n, 
+            owner_email: ownerEmail,
+            customername: n.customerName
+          }))
+        );
+        if (nError) throw nError;
+      }
+
+      // 5. Sincronizar Clientes
+      if (customers.length > 0) {
+        const { error: custError } = await supabase.from('customers').upsert(
+          customers.map(c => ({ ...c, owner_email: ownerEmail }))
+        );
+        if (custError) throw custError;
       }
 
       return true;
