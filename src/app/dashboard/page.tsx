@@ -88,6 +88,8 @@ export default function DashboardPage() {
     .filter(s => new Date(s.date).toDateString() === new Date().toDateString())
     .reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
 
+  const totalRevenue = sales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
+
   const stats = [
     {
       title: "Receita Hoje",
@@ -95,15 +97,15 @@ export default function DashboardPage() {
       change: "+12.5%",
       trend: "up",
       icon: DollarSign,
-      color: "bg-gold-500",
+      color: "bg-emerald-500",
     },
     {
-      title: "Novos Clientes",
-      value: customers.length,
-      change: "+3",
+      title: "Faturamento Total",
+      value: totalRevenue,
+      change: `+${sales.length}`,
       trend: "up",
-      icon: Users,
-      color: "bg-black dark:bg-slate-800",
+      icon: TrendingUp,
+      color: "bg-gold-500",
     },
     {
       title: "Total de Vendas",
@@ -115,7 +117,7 @@ export default function DashboardPage() {
     },
     {
       title: "Ticket Médio",
-      value: sales.length > 0 ? todayRevenue / sales.length : 0,
+      value: sales.length > 0 ? totalRevenue / sales.length : 0,
       change: "+5.4%",
       trend: "up",
       icon: TrendingUp,
