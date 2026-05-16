@@ -39,20 +39,28 @@ export default function ComandasPage() {
   const [productSearch, setProductSearch] = useState("");
 
   const [newComandaName, setNewComandaName] = useState("");
+  const [newComandaObs, setNewComandaObs] = useState("");
 
   const handleCreateComanda = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComandaName.trim()) return;
-    addComanda({ customerName: newComandaName });
+    addComanda({ 
+      customerName: newComandaName,
+      observation: newComandaObs
+    });
     setIsModalOpen(false);
     setNewComandaName("");
+    setNewComandaObs("");
     toast("Comanda aberta com sucesso!", "success");
   };
 
   const handleEditComanda = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingComanda) {
-      updateComanda(editingComanda.id, { customerName: editingComanda.customerName });
+      updateComanda(editingComanda.id, { 
+        customerName: editingComanda.customerName,
+        observation: editingComanda.observation 
+      });
       setIsEditModalOpen(false);
       setEditingComanda(null);
       toast("Comanda atualizada!");
@@ -183,7 +191,7 @@ export default function ComandasPage() {
                           setEditingComanda(comanda);
                           setIsEditModalOpen(true);
                         }}
-                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all"
+                        className="p-2 rounded-xl hover:bg-gold-500/10 text-slate-400 hover:text-gold-600 transition-all"
                       >
                         <Edit size={16} />
                       </button>
@@ -191,6 +199,12 @@ export default function ComandasPage() {
                   </CardHeader>
 
                   <CardContent className="relative p-4 md:p-6 pt-0 flex-1 flex flex-col gap-4 md:gap-6">
+                    {comanda.observation && (
+                      <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1">Observação:</p>
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{comanda.observation}</p>
+                      </div>
+                    )}
                     <div className="space-y-2 md:space-y-3 flex-1 overflow-y-auto max-h-[150px] md:max-h-[200px] pr-1 custom-scrollbar">
                       {comanda.items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-6 md:py-8 opacity-30">
@@ -284,6 +298,15 @@ export default function ComandasPage() {
               autoFocus
             />
           </div>
+          <div className="space-y-3">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Observação (Opcional)</label>
+            <textarea 
+              placeholder="Ex: Cliente quer rachar a conta, ou observação sobre pedido..." 
+              className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-gold-500/20 text-sm min-h-[100px] resize-none"
+              value={newComandaObs}
+              onChange={(e) => setNewComandaObs(e.target.value)}
+            />
+          </div>
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="ghost" className="flex-1 h-14 rounded-2xl font-bold" onClick={() => setIsModalOpen(false)}>
               Cancelar
@@ -310,6 +333,14 @@ export default function ComandasPage() {
                 className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-gold-500/20"
                 value={editingComanda.customerName}
                 onChange={(e) => setEditingComanda({...editingComanda, customerName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Nova Observação</label>
+              <textarea 
+                className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-gold-500/20 text-sm min-h-[100px] resize-none"
+                value={editingComanda.observation || ""}
+                onChange={(e) => setEditingComanda({...editingComanda, observation: e.target.value})}
               />
             </div>
             <div className="flex gap-3 pt-4">

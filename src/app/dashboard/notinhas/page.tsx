@@ -39,20 +39,28 @@ export default function NotinhasPage() {
   const [editingNotinha, setEditingNotinha] = useState<any>(null);
 
   const [newNotinhaName, setNewNotinhaName] = useState("");
+  const [newNotinhaObs, setNewNotinhaObs] = useState("");
 
   const handleAddNotinha = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNotinhaName.trim()) return;
-    addNotinha({ customerName: newNotinhaName });
+    addNotinha({ 
+      customerName: newNotinhaName,
+      observation: newNotinhaObs
+    });
     setIsModalOpen(false);
     setNewNotinhaName("");
+    setNewNotinhaObs("");
     toast("Notinha criada com sucesso!", "success");
   };
 
   const handleEditNotinha = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingNotinha) {
-      updateNotinha(editingNotinha.id, { customerName: editingNotinha.customerName });
+      updateNotinha(editingNotinha.id, { 
+        customerName: editingNotinha.customerName,
+        observation: editingNotinha.observation
+      });
       setIsEditModalOpen(false);
       setEditingNotinha(null);
       toast("Notinha atualizada!");
@@ -229,7 +237,7 @@ export default function NotinhasPage() {
                               setEditingNotinha(n);
                               setIsEditModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all"
+                            className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-600 transition-all"
                           >
                             <Edit size={14} />
                           </button>
@@ -239,6 +247,12 @@ export default function NotinhasPage() {
                   </CardHeader>
 
                   <CardContent className="p-4 md:p-6 pt-0 flex-1 flex flex-col gap-4 md:gap-6">
+                    {n.observation && (
+                      <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-rose-600 mb-1">Observação:</p>
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{n.observation}</p>
+                      </div>
+                    )}
                     <div className="space-y-2 md:space-y-3 flex-1 overflow-y-auto max-h-[120px] md:max-h-[150px] pr-1 custom-scrollbar">
                       {n.items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-6 md:py-8 opacity-30">
@@ -338,6 +352,15 @@ export default function NotinhasPage() {
               autoFocus
             />
           </div>
+          <div className="space-y-3">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Observação (Opcional)</label>
+            <textarea 
+              placeholder="Ex: Cliente vai pagar dia 20, ou detalhes sobre o fiado..." 
+              className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/20 text-sm min-h-[100px] resize-none"
+              value={newNotinhaObs}
+              onChange={(e) => setNewNotinhaObs(e.target.value)}
+            />
+          </div>
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="ghost" className="flex-1 h-14 rounded-2xl font-bold" onClick={() => setIsModalOpen(false)}>
               Cancelar
@@ -364,6 +387,14 @@ export default function NotinhasPage() {
                 className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
                 value={editingNotinha.customerName}
                 onChange={(e) => setEditingNotinha({...editingNotinha, customerName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Nova Observação</label>
+              <textarea 
+                className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/20 text-sm min-h-[100px] resize-none"
+                value={editingNotinha.observation || ""}
+                onChange={(e) => setEditingNotinha({...editingNotinha, observation: e.target.value})}
               />
             </div>
             <div className="flex gap-3 pt-4">

@@ -49,6 +49,8 @@ interface Comanda {
   items: ComandaItem[];
   status: 'aberta' | 'paga';
   date: string;
+  observation?: string;
+  owner_email?: string;
 }
 
 interface NotinhaItem {
@@ -64,6 +66,8 @@ interface Notinha {
   items: NotinhaItem[];
   date: string;
   status: 'pendente' | 'pago';
+  observation?: string;
+  owner_email?: string;
 }
 
 interface AppContextType {
@@ -673,7 +677,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Funções de Comandas
   const addComanda = async (comandaData: Omit<Comanda, 'id' | 'date' | 'status' | 'items'>) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     const newComanda: Comanda = {
       ...comandaData,
@@ -681,6 +685,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       date: new Date().toISOString(),
       status: 'aberta',
       items: [],
+      observation: comandaData.observation || "",
       owner_email: ownerPrefix
     };
     
@@ -801,7 +806,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Funções de Notinhas
   const addNotinha = async (notinhaData: Omit<Notinha, 'id' | 'date' | 'status' | 'items'>) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     const newNotinha: Notinha = {
       ...notinhaData,
@@ -809,6 +814,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       date: new Date().toISOString(),
       status: 'pendente',
       items: [],
+      observation: notinhaData.observation || "",
       owner_email: ownerPrefix
     };
     

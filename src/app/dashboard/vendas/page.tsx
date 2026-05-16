@@ -26,10 +26,12 @@ import { formatCurrency, cn, filterByDateRange } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-utils";
 
 export default function VendasPage() {
-  const { sales, addSale } = useApp();
+  const { sales, addSale, products } = useApp();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [productSearch, setProductSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<number | 'today' | 'all'>(30);
 
   const [newSale, setNewSale] = useState({
@@ -40,6 +42,10 @@ export default function VendasPage() {
 
   const handleAddSale = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newSale.product || !newSale.amount) {
+      toast("Preencha todos os campos.", "error");
+      return;
+    }
     addSale({
       product: newSale.product,
       amount: parseFloat(newSale.amount),
@@ -49,6 +55,19 @@ export default function VendasPage() {
     setNewSale({ product: "", amount: "", quantity: "1" });
     toast("Venda registrada com sucesso!", "success");
   };
+
+  const handleSelectProduct = (product: any) => {
+    setNewSale({
+      ...newSale,
+      product: product.name,
+      amount: product.price.toString()
+    });
+    setIsProductModalOpen(false);
+  };
+
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
 
   const handleExportExcel = () => {
     if (sales.length === 0) {
@@ -270,7 +289,19 @@ export default function VendasPage() {
       >
         <form onSubmit={handleAddSale} className="space-y-6 p-2">
           <div className="space-y-3">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Nome do Produto</label>
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Produto</label>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 text-[10px] font-black uppercase text-gold-600 hover:text-gold-700 hover:bg-gold-500/10 rounded-lg"
+                onClick={() => setIsProductModalOpen(true)}
+              >
+                <ShoppingBag size={12} className="mr-1" />
+                Selecionar do Estoque
+              </Button>
+            </div>
             <Input 
               required 
               placeholder="Ex: Essência Zomo Strong Mint" 
@@ -313,6 +344,63 @@ export default function VendasPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Product Selection Modal */}
+      <Modal
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+        title="Selecionar Produto do Estoque"
+      >
+        <div className="space-y-6 p-2">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Input 
+              placeholder="Pesquisar no estoque..." 
+              className="pl-12 h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-12 opacity-40">
+                <ShoppingBag size={40} className="mx-auto mb-4" />
+                <p className="text-sm font-bold uppercase tracking-widest">Nenhum produto em estoque</p>
+              </div>
+            ) : (
+              filteredProducts.map((product) => (
+                <button 
+                  key={product.id}
+                  type="button"
+                  onClick={() => handleSelectProduct(product)}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-emerald-500/50 transition-all group w-full text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm group-hover:bg-emerald-500 group-hover:border-emerald-500 transition-colors">
+                      <ShoppingBag size={20} className="text-slate-400 group-hover:text-white transition-colors" />
+                    </div>
+                    <div>
+                      <p className="font-bold tracking-tight">{product.name}</p>
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{product.category} • {formatCurrency(product.price)}</p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] font-black text-slate-400 group-hover:text-emerald-500 transition-colors">
+                    SELECIONAR
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          <div className="pt-4">
+            <Button variant="outline" className="w-full h-14 rounded-2xl font-bold" onClick={() => setIsProductModalOpen(false)}>
+              Fechar
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
