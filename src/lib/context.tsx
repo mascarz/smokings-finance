@@ -128,7 +128,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
         
-        const ownerPrefix = parsedUser.ownerEmail || parsedUser.email;
+        const ownerPrefix = (parsedUser.ownerEmail || parsedUser.email).toLowerCase().trim();
         
         setSales(JSON.parse(localStorage.getItem(`smokings_sales_${ownerPrefix}`) || "[]"));
         setNotinhas(JSON.parse(localStorage.getItem(`smokings_notinhas_${ownerPrefix}`) || "[]"));
@@ -145,23 +145,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // 1. Ativar Escuta em Tempo Real (Realtime)
   useEffect(() => {
     if (user) {
-      const ownerPrefix = user.isOwner ? user.email.toLowerCase().trim() : (user.ownerEmail?.toLowerCase().trim() || user.email.toLowerCase().trim());
+      const ownerPrefix = (user.isOwner ? user.email : (user.ownerEmail || user.email)).toLowerCase().trim();
       
+      console.log("Ativando Realtime para o dono:", ownerPrefix);
+
       const channel = supabase
-        .channel('db_changes')
+        .channel(`changes_${ownerPrefix}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'sales', filter: `owner_email=eq.${ownerPrefix}` },
           (payload) => {
-            console.log("Venda alterada no banco!", payload);
-            syncWithSupabase(ownerPrefix); // Recarrega os dados
+            console.log("REALTIME: Venda alterada!", payload);
+            syncWithSupabase(ownerPrefix);
           }
         )
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'products', filter: `owner_email=eq.${ownerPrefix}` },
           (payload) => {
-            console.log("Produto alterado no banco!", payload);
+            console.log("REALTIME: Produto alterado!", payload);
             syncWithSupabase(ownerPrefix);
           }
         )
@@ -169,7 +171,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'comandas', filter: `owner_email=eq.${ownerPrefix}` },
           (payload) => {
-            console.log("Comanda alterada no banco!", payload);
+            console.log("REALTIME: Comanda alterada!", payload);
             syncWithSupabase(ownerPrefix);
           }
         )
@@ -177,11 +179,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'notinhas', filter: `owner_email=eq.${ownerPrefix}` },
           (payload) => {
-            console.log("Notinha alterada no banco!", payload);
+            console.log("REALTIME: Notinha alterada!", payload);
             syncWithSupabase(ownerPrefix);
           }
         )
-        .subscribe();
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'expenses', filter: `owner_email=eq.${ownerPrefix}` },
+          (payload) => {
+            console.log("REALTIME: Despesa alterada!", payload);
+            syncWithSupabase(ownerPrefix);
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'customers', filter: `owner_email=eq.${ownerPrefix}` },
+          (payload) => {
+            console.log("REALTIME: Cliente alterado!", payload);
+            syncWithSupabase(ownerPrefix);
+          }
+        )
+        .subscribe((status) => {
+          console.log(`Status do canal Realtime (${ownerPrefix}):`, status);
+        });
 
       return () => {
         supabase.removeChannel(channel);
@@ -194,7 +214,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined" && user) {
       localStorage.setItem("smokings_user", JSON.stringify(user));
       
-      const ownerPrefix = user.ownerEmail || user.email;
+      const ownerPrefix = (user.ownerEmail || user.email).toLowerCase().trim();
       
       localStorage.setItem(`smokings_sales_${ownerPrefix}`, JSON.stringify(sales));
       localStorage.setItem(`smokings_notinhas_${ownerPrefix}`, JSON.stringify(notinhas));
@@ -204,16 +224,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(`smokings_expenses_${ownerPrefix}`, JSON.stringify(expenses));
       localStorage.setItem(`smokings_customers_${ownerPrefix}`, JSON.stringify(customers));
       localStorage.setItem(`smokings_notifications_${ownerPrefix}`, JSON.stringify(notifications));
-
+      
       // Auto-sincronizar funcionários com o Supabase quando o dono está logado
       if (user.isOwner && employees.length > 0) {
         const syncEmployees = async () => {
           try {
-            const registry = JSON.parse(localStorage.getItem("smokings_registry") || "{}");
             const employeesToSync = employees.map(emp => ({
               name: emp.name,
               email: emp.email.toLowerCase().trim(),
-              password: "123",
+              password: emp.password || "123",
               isOwner: false,
               ownerEmail: user.email.toLowerCase().trim(),
               permissions: emp.permissions || ["vendas"]
@@ -223,7 +242,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               await saveToSupabaseRegistry(empData);
             }
           } catch (err) {
-            console.warn("Erro na auto-sincronização:", err);
+            console.warn("Erro na auto-sincronização de equipe:", err);
           }
         };
         syncEmployees();
@@ -256,7 +275,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const syncWithSupabase = async (ownerEmail: string) => {
     try {
       const normalizedOwnerEmail = ownerEmail.toLowerCase().trim();
-      console.log("Sincronizando banco de dados da nuvem para:", normalizedOwnerEmail);
+      console.log("SINCRONIZANDO: Buscando dados da nuvem para:", normalizedOwnerEmail);
 
       // 1. Sincronizar PRODUTOS
       const { data: productsData, error: productsError } = await supabase
@@ -264,10 +283,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!productsError && productsData && productsData.length > 0) {
-        console.log("Produtos na nuvem:", productsData.length);
-        setProducts(productsData);
-        localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(productsData));
+      if (!productsError) {
+        console.log(`- Produtos: ${productsData?.length || 0}`);
+        const finalProducts = productsData || [];
+        setProducts(finalProducts);
+        localStorage.setItem(`smokings_products_${normalizedOwnerEmail}`, JSON.stringify(finalProducts));
       }
 
       // 2. Sincronizar VENDAS
@@ -276,10 +296,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!salesError && salesData && salesData.length > 0) {
-        console.log("Vendas na nuvem:", salesData.length);
-        setSales(salesData);
-        localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(salesData));
+      if (!salesError) {
+        console.log(`- Vendas: ${salesData?.length || 0}`);
+        const finalSales = salesData || [];
+        setSales(finalSales);
+        localStorage.setItem(`smokings_sales_${normalizedOwnerEmail}`, JSON.stringify(finalSales));
       }
 
       // 3. Sincronizar COMANDAS
@@ -288,7 +309,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!comandasError && comandasData && comandasData.length > 0) {
+      if (!comandasError) {
+        console.log(`- Comandas: ${comandasData?.length || 0}`);
         const finalComandas = (comandasData || []).map(c => ({
           ...c,
           customerName: c.customerName || c.customername,
@@ -304,7 +326,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
 
-      if (!notinhasError && notinhasData && notinhasData.length > 0) {
+      if (!notinhasError) {
+        console.log(`- Notinhas: ${notinhasData?.length || 0}`);
         const finalNotinhas = (notinhasData || []).map(n => ({
           ...n,
           customerName: n.customerName || n.customername
@@ -319,9 +342,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
         
-      if (!customersError && customersData && customersData.length > 0) {
-        setCustomers(customersData);
-        localStorage.setItem(`smokings_customers_${normalizedOwnerEmail}`, JSON.stringify(customersData));
+      if (!customersError) {
+        console.log(`- Clientes: ${customersData?.length || 0}`);
+        const finalCustomers = customersData || [];
+        setCustomers(finalCustomers);
+        localStorage.setItem(`smokings_customers_${normalizedOwnerEmail}`, JSON.stringify(finalCustomers));
       }
 
       // 6. Sincronizar DESPESAS
@@ -330,9 +355,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('owner_email', normalizedOwnerEmail);
         
-      if (!expensesError && expensesData && expensesData.length > 0) {
-        setExpenses(expensesData);
-        localStorage.setItem(`smokings_expenses_${normalizedOwnerEmail}`, JSON.stringify(expensesData));
+      if (!expensesError) {
+        console.log(`- Despesas: ${expensesData?.length || 0}`);
+        const finalExpenses = expensesData || [];
+        setExpenses(finalExpenses);
+        localStorage.setItem(`smokings_expenses_${normalizedOwnerEmail}`, JSON.stringify(finalExpenses));
       }
 
       return true;
@@ -1025,7 +1052,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const addCustomer = (cust: any) => setCustomers(prev => [cust, ...prev]);
+  const addCustomer = async (cust: any) => {
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
+    
+    const newCustomer = {
+      ...cust,
+      id: cust.id || Math.random().toString(36).substr(2, 9),
+      owner_email: ownerPrefix
+    };
+
+    setCustomers(prev => [newCustomer, ...prev]);
+
+    try {
+      await supabase.from('customers').upsert([newCustomer]);
+    } catch (err) {
+      console.warn("Erro ao salvar cliente na nuvem:", err);
+    }
+  };
 
   return (
     <AppContext.Provider value={{ 
