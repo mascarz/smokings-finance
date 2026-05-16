@@ -34,36 +34,65 @@ export default function VendasPage() {
   const [productSearch, setProductSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<number | 'today' | 'all'>(30);
 
-  const [newSale, setNewSale] = useState({
-    product: "",
-    amount: "",
-    quantity: "1",
-  });
+  // Sistema de Carrinho
+  const [cart, setCart] = useState<any[]>([]);
 
   const handleAddSale = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSale.product || !newSale.amount) {
-      toast("Preencha todos os campos.", "error");
+    if (cart.length === 0) {
+      toast("Adicione pelo menos um produto ao carrinho.", "warning");
       return;
     }
-    addSale({
-      product: newSale.product,
-      amount: parseFloat(newSale.amount),
-      quantity: parseInt(newSale.quantity),
+    
+    // Salvar todos os itens do carrinho como vendas individuais
+    cart.forEach(item => {
+      addSale({
+        product: item.product,
+        amount: item.amount,
+        quantity: item.quantity,
+      });
     });
+
     setIsModalOpen(false);
-    setNewSale({ product: "", amount: "", quantity: "1" });
-    toast("Venda registrada com sucesso!", "success");
+    setCart([]);
+    toast(`${cart.length} vendas registradas com sucesso!`, "success");
   };
 
   const handleSelectProduct = (product: any) => {
-    setNewSale({
-      ...newSale,
-      product: product.name,
-      amount: product.price.toString()
-    });
+    const existingItem = cart.find(item => item.productId === product.id);
+    if (existingItem) {
+      setCart(cart.map(item => 
+        item.productId === product.id 
+          ? { ...item, quantity: item.quantity + 1 } 
+          : item
+      ));
+    } else {
+      setCart([...cart, {
+        productId: product.id,
+        product: product.name,
+        amount: product.price,
+        quantity: 1
+      }]);
+    }
     setIsProductModalOpen(false);
+    toast(`${product.name} adicionado ao carrinho!`);
   };
+
+  const removeFromCart = (productId: string) => {
+    setCart(cart.filter(item => item.productId !== productId));
+  };
+
+  const updateCartQuantity = (productId: string, delta: number) => {
+    setCart(cart.map(item => {
+      if (item.productId === productId) {
+        const newQuantity = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    }));
+  };
+
+  const cartTotal = cart.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(productSearch.toLowerCase())
@@ -281,69 +310,106 @@ export default function VendasPage() {
         )}
       </div>
 
-      {/* New Sale Modal - Premium UI */}
+      {/* New Sale Modal - Multi-item Cart UI */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Registrar Venda Direta"
+        title="Nova Venda (Múltiplos Itens)"
       >
-        <form onSubmit={handleAddSale} className="space-y-6 p-2">
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Produto</label>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 text-[10px] font-black uppercase text-gold-600 hover:text-gold-700 hover:bg-gold-500/10 rounded-lg"
-                onClick={() => setIsProductModalOpen(true)}
-              >
-                <ShoppingBag size={12} className="mr-1" />
-                Selecionar do Estoque
-              </Button>
-            </div>
-            <Input 
-              required 
-              placeholder="Ex: Essência Zomo Strong Mint" 
-              className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-emerald-500/20"
-              value={newSale.product}
-              onChange={(e) => setNewSale({...newSale, product: e.target.value})}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Preço Unitário</label>
-              <Input 
-                required 
-                type="number" 
-                step="0.01"
-                placeholder="0,00" 
-                className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                value={newSale.amount}
-                onChange={(e) => setNewSale({...newSale, amount: e.target.value})}
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Quantidade</label>
-              <Input 
-                required 
-                type="number" 
-                min="1"
-                className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                value={newSale.quantity}
-                onChange={(e) => setNewSale({...newSale, quantity: e.target.value})}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="ghost" className="flex-1 h-14 rounded-2xl font-bold" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="premium" className="flex-1 h-14 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20">
-              Finalizar Venda
+        <div className="space-y-6 p-2">
+          <div className="flex justify-between items-center">
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Carrinho de Vendas</p>
+            <Button 
+              type="button" 
+              variant="gold" 
+              size="sm" 
+              className="h-10 rounded-xl px-4"
+              onClick={() => setIsProductModalOpen(true)}
+            >
+              <Plus size={16} className="mr-2" />
+              Adicionar Produto
             </Button>
           </div>
-        </form>
+
+          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            {cart.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl opacity-40">
+                <ShoppingBag size={40} className="mx-auto mb-4" />
+                <p className="text-xs font-black uppercase tracking-widest">Carrinho vazio</p>
+                <p className="text-[10px] font-medium mt-1">Clique em "Adicionar Produto" para começar.</p>
+              </div>
+            ) : (
+              cart.map((item) => (
+                <div key={item.productId} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <p className="font-bold text-sm tracking-tight truncate">{item.product}</p>
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                      {formatCurrency(item.amount)} un.
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <button 
+                        onClick={() => updateCartQuantity(item.productId, -1)}
+                        className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                      >
+                        <Trash2 size={14} className={cn(item.quantity === 1 && "text-rose-500")} />
+                      </button>
+                      <span className="text-xs font-black w-4 text-center">{item.quantity}</span>
+                      <button 
+                        onClick={() => updateCartQuantity(item.productId, 1)}
+                        className="text-slate-400 hover:text-emerald-500 transition-colors p-1"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    <p className="font-black text-xs min-w-[60px] text-right">
+                      {formatCurrency(item.amount * item.quantity).replace(",00", "")}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {cart.length > 0 && (
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Total da Venda</span>
+                <span className="text-2xl font-black tracking-tighter text-emerald-600">
+                  {formatCurrency(cartTotal)}
+                </span>
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  variant="ghost" 
+                  className="flex-1 h-14 rounded-2xl font-bold" 
+                  onClick={() => {
+                    setCart([]);
+                    setIsModalOpen(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  variant="premium" 
+                  className="flex-1 h-14 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                  onClick={handleAddSale}
+                >
+                  Finalizar Venda
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {cart.length === 0 && (
+            <Button variant="ghost" className="w-full h-14 rounded-2xl font-bold" onClick={() => setIsModalOpen(false)}>
+              Fechar
+            </Button>
+          )}
+        </div>
       </Modal>
 
       {/* Product Selection Modal */}
