@@ -116,9 +116,9 @@ export default function VendasPage() {
 
   const filteredByDate = dateFilter === 'all' ? sales : filterByDateRange(sales, dateFilter);
 
-  const filteredSales = filteredByDate.filter(sale => 
-    sale.product.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSales = filteredByDate
+    .filter(sale => sale.product.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const totalRevenue = filteredSales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
   const totalItems = filteredSales.reduce((acc, curr) => acc + curr.quantity, 0);

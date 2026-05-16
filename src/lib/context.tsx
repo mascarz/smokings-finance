@@ -298,7 +298,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select('*')
-        .eq('owner_email', normalizedOwnerEmail);
+        .eq('owner_email', normalizedOwnerEmail)
+        .order('date', { ascending: false });
 
       if (!salesError) {
         console.log(`- Vendas: ${salesData?.length || 0}`);
