@@ -12,7 +12,6 @@ import { supabase } from "@/lib/supabase";
 export default function PerfilPage() {
   const { clearAllData, user, login, logout } = useApp();
   const { toast } = useToast();
-  const [whatsapp, setWhatsapp] = React.useState(user?.whatsappNumber || "");
 
   const handleResetData = () => {
     if (confirm("ATENÇÃO: Isso apagará todos os dados locais deste navegador e recarregará as informações da nuvem. Deseja continuar?")) {
@@ -27,17 +26,8 @@ export default function PerfilPage() {
   const handleSaveProfile = async () => {
     if (!user) return;
     try {
-      // Atualiza no Supabase
-      const { error } = await supabase
-        .from('smokings_registry')
-        .update({ whatsappNumber: whatsapp })
-        .eq('email', user.email.toLowerCase().trim());
-
-      if (error) throw error;
-
-      // Atualiza estado local
-      login({ ...user, whatsappNumber: whatsapp });
-      toast("Perfil atualizado com sucesso!");
+      // No momento, apenas salvando dados estáticos ou futuras preferências
+      toast("Perfil atualizado!");
     } catch (err) {
       console.error("Erro ao salvar perfil:", err);
       toast("Erro ao salvar perfil.", "error");
@@ -85,44 +75,8 @@ export default function PerfilPage() {
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Configurações de Notificações</CardTitle>
-              <CardDescription>Configure como deseja receber os alertas do sistema.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">WhatsApp para Notificações</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                    <Input 
-                      placeholder="Ex: 5511999998888" 
-                      className="pl-10 h-12" 
-                      value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-500 italic">Insira o código do país + DDD + número (ex: 5511999998888).</p>
-                </div>
-              </div>
-              
-              <div className="p-4 rounded-xl bg-gold-500/5 border border-gold-500/10">
-                <p className="text-xs font-bold text-gold-600 uppercase mb-2">Tutorial WhatsApp:</p>
-                <ol className="text-xs text-slate-600 dark:text-slate-400 space-y-1 list-decimal pl-4">
-                  <li>Envie a mensagem <b>"allow send messages"</b> para o número <b>+34 644 20 47 56</b> no WhatsApp.</li>
-                  <li>Salve o seu número acima e clique em "Salvar Alterações".</li>
-                  <li>Pronto! Você receberá alertas de vendas e pagamentos automaticamente.</li>
-                </ol>
-              </div>
-
-              <Button variant="premium" className="flex items-center gap-2" onClick={handleSaveProfile}>
-                <Save size={18} /> Salvar Alterações
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Informações da Conta</CardTitle>
+              <CardDescription>Dados cadastrais do sistema.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -135,6 +89,10 @@ export default function PerfilPage() {
                   <Input value={user?.email || ""} disabled className="bg-slate-50" />
                 </div>
               </div>
+              
+              <Button variant="premium" className="flex items-center gap-2" onClick={handleSaveProfile}>
+                <Save size={18} /> Salvar Alterações
+              </Button>
             </CardContent>
           </Card>
 

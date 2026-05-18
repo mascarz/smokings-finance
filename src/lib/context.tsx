@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "./supabase";
+import { formatCurrency } from "./utils";
 
 interface User {
   name: string;
@@ -9,7 +10,6 @@ interface User {
   isOwner: boolean;
   ownerEmail?: string;
   permissions?: string[];
-  whatsappNumber?: string;
 }
 
 interface Notification {
@@ -132,21 +132,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Carregar dados do localStorage ao iniciar
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedUser = localStorage.getItem("smokings_user");
-      if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        
-        const ownerPrefix = (parsedUser.ownerEmail || parsedUser.email).toLowerCase().trim();
-        
-        setSales(JSON.parse(localStorage.getItem(`smokings_sales_${ownerPrefix}`) || "[]"));
-        setNotinhas(JSON.parse(localStorage.getItem(`smokings_notinhas_${ownerPrefix}`) || "[]"));
-        setProducts(JSON.parse(localStorage.getItem(`smokings_products_${ownerPrefix}`) || "[]"));
-        setComandas(JSON.parse(localStorage.getItem(`smokings_comandas_${ownerPrefix}`) || "[]"));
-        setEmployees(JSON.parse(localStorage.getItem(`smokings_employees_${ownerPrefix}`) || "[]"));
-        setExpenses(JSON.parse(localStorage.getItem(`smokings_expenses_${ownerPrefix}`) || "[]"));
-        setCustomers(JSON.parse(localStorage.getItem(`smokings_customers_${ownerPrefix}`) || "[]"));
-        setNotifications(JSON.parse(localStorage.getItem(`smokings_notifications_${ownerPrefix}`) || "[]"));
+      try {
+        const savedUser = localStorage.getItem("smokings_user");
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          
+          const ownerPrefix = (parsedUser.ownerEmail || parsedUser.email).toLowerCase().trim();
+          
+          const safeParse = (key: string) => {
+            try {
+              const val = localStorage.getItem(key);
+              return val ? JSON.parse(val) : [];
+            } catch (e) {
+              console.error(`Erro ao ler ${key} do cache:`, e);
+              return [];
+            }
+          };
+
+          setSales(safeParse(`smokings_sales_${ownerPrefix}`));
+          setNotinhas(safeParse(`smokings_notinhas_${ownerPrefix}`));
+          setProducts(safeParse(`smokings_products_${ownerPrefix}`));
+          setComandas(safeParse(`smokings_comandas_${ownerPrefix}`));
+          setEmployees(safeParse(`smokings_employees_${ownerPrefix}`));
+          setExpenses(safeParse(`smokings_expenses_${ownerPrefix}`));
+          setCustomers(safeParse(`smokings_customers_${ownerPrefix}`));
+          setNotifications(safeParse(`smokings_notifications_${ownerPrefix}`));
+        }
+      } catch (err) {
+        console.error("Erro fatal ao inicializar sistema local:", err);
       }
     }
   }, []);
@@ -581,50 +595,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setNotifications([]);
   };
 
-  const sendWhatsAppNotification = async (message: string) => {
-    if (!user) return;
-    const ownerEmail = (user.isOwner ? user.email : (user.ownerEmail || user.email)).toLowerCase().trim();
-    
-    try {
-      // 1. Buscar o número de WhatsApp do dono no Supabase
-      const { data, error } = await supabase
-        .from('smokings_registry')
-        .select('whatsappNumber')
-        .eq('email', ownerEmail)
-        .maybeSingle();
-
-      if (error || !data?.whatsappNumber) {
-        console.log("WhatsApp não configurado para este dono.");
-        return;
-      }
-
-      const phoneNumber = data.whatsappNumber.replace(/\D/g, '');
-      if (!phoneNumber) return;
-      
-      // 2. Usar CallMeBot (API Gratuita e simples)
-      // Tutorial: O dono deve enviar "allow send messages" para +34 644 20 47 56 no WhatsApp
-      const apiKey = "9264227"; 
-      
-      // IMPORTANTE: Adicionar o código do país se não houver (assumindo Brasil 55 se tiver 10 ou 11 dígitos)
-      let finalPhone = phoneNumber;
-      if (phoneNumber.length === 10 || phoneNumber.length === 11) {
-        finalPhone = "55" + phoneNumber;
-      }
-      
-      const url = `https://api.callmebot.com/whatsapp.php?phone=${finalPhone}&text=${encodeURIComponent(message)}&apikey=${apiKey}`;
-      
-      console.log("Tentando enviar WhatsApp para:", finalPhone);
-      
-      // Usar uma abordagem mais robusta para o fetch no cliente
-      fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-cache' })
-        .then(() => console.log("Requisição de WhatsApp enviada."))
-        .catch(e => console.error("Falha ao disparar WhatsApp:", e));
-
-    } catch (err) {
-      console.warn("Erro ao processar notificação WhatsApp:", err);
-    }
-  };
-
   const addSale = async (saleData: Omit<Sale, 'id' | 'date'>) => {
     const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
     
@@ -641,12 +611,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Envia para o Supabase IMEDIATAMENTE
     try {
       await supabase.from('sales').upsert([newSale]);
-      
-      // NOTIFICAÇÃO WHATSAPP
-      const totalAmount = newSale.amount * newSale.quantity;
-      const msg = `🚀 *Nova Venda Registrada!*\n\n📦 *Produto:* ${newSale.product}\n🔢 *Qtd:* ${newSale.quantity}\n💰 *Valor:* R$ ${totalAmount.toFixed(2)}\n👤 *Vendedor:* ${user?.name || 'Sistema'}`;
-      sendWhatsAppNotification(msg);
-
     } catch (err) {
       console.warn("Erro ao salvar venda na nuvem:", err);
     }
@@ -840,10 +804,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       try {
         await supabase.from('comandas').upsert([updatedComanda]);
-        
-        const msg = `🧾 *Comanda Paga!*\n\n👤 *Cliente:* ${comanda.customerName}\n💰 *Total Itens:* ${formatCurrency(totalItems)}\n📉 *Desconto:* ${formatCurrency(customDiscount)}\n✅ *Valor Final:* ${formatCurrency(finalTotal)}`;
-        sendWhatsAppNotification(msg);
-
       } catch (err) {
         console.error("Erro ao pagar comanda na nuvem:", err);
       }
@@ -1022,10 +982,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       try {
         await supabase.from('notinhas').upsert([updatedNotinha]);
-        
-        const msg = `💰 *Notinha Paga!*\n\n👤 *Cliente:* ${notinha.customerName}\n💰 *Total Fiado:* ${formatCurrency(totalItems)}\n📉 *Desconto:* ${formatCurrency(customDiscount)}\n✅ *Valor Final:* ${formatCurrency(finalTotal)}`;
-        sendWhatsAppNotification(msg);
-
       } catch (err) {
         console.error("Erro ao pagar notinha na nuvem:", err);
       }
