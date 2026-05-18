@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useApp } from "@/lib/context";
 import { useToast } from "@/components/ui/toast";
+import { supabase } from "@/lib/supabase";
 
 export default function PerfilPage() {
   const { clearAllData, user, login, logout } = useApp();
@@ -27,7 +28,7 @@ export default function PerfilPage() {
     if (!user) return;
     try {
       // Atualiza no Supabase
-      const { error } = await await (require("@/lib/supabase").supabase)
+      const { error } = await supabase
         .from('smokings_registry')
         .update({ whatsappNumber: whatsapp })
         .eq('email', user.email.toLowerCase().trim());

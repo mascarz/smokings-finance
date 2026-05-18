@@ -7,8 +7,9 @@ interface User {
   name: string;
   email: string;
   isOwner: boolean;
-  ownerEmail?: string; // E-mail do dono desta conta (se for funcionário)
-  permissions?: string[]; // Permissões do funcionário
+  ownerEmail?: string;
+  permissions?: string[];
+  whatsappNumber?: string;
 }
 
 interface Notification {
@@ -70,15 +71,6 @@ interface Notinha {
   observation?: string;
   discount?: number;
   owner_email?: string;
-}
-
-interface User {
-  name: string;
-  email: string;
-  isOwner: boolean;
-  ownerEmail?: string;
-  permissions?: string[];
-  whatsappNumber?: string; // Para notificações
 }
 
 interface AppContextType {
@@ -876,7 +868,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setComandas(prev => prev.filter(c => c.id !== id));
     try {
       await supabase.from('comandas').delete().eq('id', id);
-      toast("Comanda removida permanentemente.", "info");
+      addNotification({
+        title: "Comanda Removida",
+        message: "Comanda excluída permanentemente.",
+        type: "info"
+      });
     } catch (err) {
       console.error("Erro ao deletar comanda:", err);
     }
