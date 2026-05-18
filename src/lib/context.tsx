@@ -582,7 +582,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendWhatsAppNotification = async (message: string) => {
-    // Pegar as configurações do usuário logado (dono ou vinculado ao dono)
     if (!user) return;
     const ownerEmail = (user.isOwner ? user.email : (user.ownerEmail || user.email)).toLowerCase().trim();
     
@@ -599,19 +598,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const phoneNumber = data.whatsappNumber.replace(/\D/g, ''); // Apenas números
+      const phoneNumber = data.whatsappNumber.replace(/\D/g, '');
+      if (!phoneNumber) return;
       
-      // 2. Usar CallMeBot (API Gratuita e simples para notificações)
+      // 2. Usar CallMeBot (API Gratuita e simples)
       // Tutorial: O dono deve enviar "allow send messages" para +34 644 20 47 56 no WhatsApp
-      // E pegar o seu código (apikey)
-      const apiKey = "9264227"; // API Key padrão de teste ou configurável
+      const apiKey = "9264227"; 
       
-      const url = `https://api.callmebot.com/whatsapp.php?phone=${phoneNumber}&text=${encodeURIComponent(message)}&apikey=${apiKey}`;
+      // IMPORTANTE: Adicionar o código do país se não houver (assumindo Brasil 55 se tiver 10 ou 11 dígitos)
+      let finalPhone = phoneNumber;
+      if (phoneNumber.length === 10 || phoneNumber.length === 11) {
+        finalPhone = "55" + phoneNumber;
+      }
       
-      await fetch(url, { mode: 'no-cors' }); // Envio assíncrono
-      console.log("Notificação enviada ao WhatsApp:", phoneNumber);
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${finalPhone}&text=${encodeURIComponent(message)}&apikey=${apiKey}`;
+      
+      console.log("Tentando enviar WhatsApp para:", finalPhone);
+      
+      // Usar uma abordagem mais robusta para o fetch no cliente
+      fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-cache' })
+        .then(() => console.log("Requisição de WhatsApp enviada."))
+        .catch(e => console.error("Falha ao disparar WhatsApp:", e));
+
     } catch (err) {
-      console.warn("Erro ao enviar notificação WhatsApp:", err);
+      console.warn("Erro ao processar notificação WhatsApp:", err);
     }
   };
 

@@ -93,7 +93,7 @@ export default function DashboardPage() {
   const stats = [
     {
       title: "Receita Hoje",
-      value: todayRevenue,
+      value: todayRevenue || 0,
       change: "+12.5%",
       trend: "up",
       icon: DollarSign,
@@ -101,15 +101,15 @@ export default function DashboardPage() {
     },
     {
       title: "Faturamento Total",
-      value: totalRevenue,
-      change: `+${sales.length}`,
+      value: totalRevenue || 0,
+      change: `+${(sales || []).length}`,
       trend: "up",
       icon: TrendingUp,
       color: "bg-gold-500",
     },
     {
       title: "Total de Vendas",
-      value: sales.length,
+      value: (sales || []).length,
       change: "+8.2%",
       trend: "up",
       icon: ShoppingBag,
@@ -117,7 +117,7 @@ export default function DashboardPage() {
     },
     {
       title: "Ticket Médio",
-      value: sales.length > 0 ? totalRevenue / sales.length : 0,
+      value: (sales && sales.length > 0) ? (totalRevenue / sales.length) : 0,
       change: "+5.4%",
       trend: "up",
       icon: TrendingUp,
@@ -306,7 +306,7 @@ export default function DashboardPage() {
               <CardDescription className="text-white/80 font-medium">Insights e recomendações automáticas para o seu negócio.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-4">
-              {sales.length > 0 ? (
+              {(sales && sales.length > 0) ? (
                 <>
                   <div className="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-3">
                     <div className="flex items-center gap-2 text-sm font-black uppercase tracking-widest">
