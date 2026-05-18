@@ -9,8 +9,9 @@ import { useApp } from "@/lib/context";
 import { useToast } from "@/components/ui/toast";
 
 export default function PerfilPage() {
-  const { clearAllData, user } = useApp();
+  const { clearAllData, user, login, logout } = useApp();
   const { toast } = useToast();
+  const [whatsapp, setWhatsapp] = React.useState(user?.whatsappNumber || "");
 
   const handleResetData = () => {
     if (confirm("ATENÇÃO: Isso apagará todos os dados locais deste navegador e recarregará as informações da nuvem. Deseja continuar?")) {
@@ -19,6 +20,26 @@ export default function PerfilPage() {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    try {
+      // Atualiza no Supabase
+      const { error } = await await (require("@/lib/supabase").supabase)
+        .from('smokings_registry')
+        .update({ whatsappNumber: whatsapp })
+        .eq('email', user.email.toLowerCase().trim());
+
+      if (error) throw error;
+
+      // Atualiza estado local
+      login({ ...user, whatsappNumber: whatsapp });
+      toast("Perfil atualizado com sucesso!");
+    } catch (err) {
+      console.error("Erro ao salvar perfil:", err);
+      toast("Erro ao salvar perfil.", "error");
     }
   };
 
@@ -33,12 +54,11 @@ export default function PerfilPage() {
         <div className="md:col-span-1 space-y-6">
           <Card>
             <CardContent className="pt-6 flex flex-col items-center">
-              <div className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center text-4xl font-bold border-4 border-background shadow-xl mb-4">
-                D
+              <div className="w-32 h-32 rounded-full bg-gold-500/10 flex items-center justify-center text-4xl font-bold border-4 border-gold-500 shadow-xl mb-4 text-gold-600">
+                {user?.name?.charAt(0).toUpperCase() || "S"}
               </div>
-              <h3 className="font-bold text-lg">Dono da Tabacaria</h3>
-              <p className="text-sm text-muted-foreground">Proprietário</p>
-              <Button variant="outline" size="sm" className="mt-4 rounded-full">Alterar Foto</Button>
+              <h3 className="font-bold text-lg">{user?.name || "Dono Smokings"}</h3>
+              <p className="text-sm text-muted-foreground">{user?.isOwner ? "Proprietário" : "Funcionário"}</p>
             </CardContent>
           </Card>
 
@@ -64,34 +84,36 @@ export default function PerfilPage() {
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Informações Pessoais</CardTitle>
-              <CardDescription>Estes dados são usados para faturas e comunicações oficiais.</CardDescription>
+              <CardTitle>Configurações de Notificações</CardTitle>
+              <CardDescription>Configure como deseja receber os alertas do sistema.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Nome Completo</label>
+                  <label className="text-xs font-bold uppercase text-muted-foreground">WhatsApp para Notificações</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                    <Input defaultValue="Dono da Tabacaria Smokings" className="pl-10" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                    <Input 
+                      placeholder="Ex: 5511999998888" 
+                      className="pl-10 h-12" 
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                    />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">E-mail</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                    <Input defaultValue="contato@smokings.com" className="pl-10" />
-                  </div>
+                  <p className="text-[10px] text-slate-500 italic">Insira o código do país + DDD + número (ex: 5511999998888).</p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Telefone / WhatsApp</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                  <Input defaultValue="(11) 99999-8888" className="pl-10" />
-                </div>
+              
+              <div className="p-4 rounded-xl bg-gold-500/5 border border-gold-500/10">
+                <p className="text-xs font-bold text-gold-600 uppercase mb-2">Tutorial WhatsApp:</p>
+                <ol className="text-xs text-slate-600 dark:text-slate-400 space-y-1 list-decimal pl-4">
+                  <li>Envie a mensagem <b>"allow send messages"</b> para o número <b>+34 644 20 47 56</b> no WhatsApp.</li>
+                  <li>Salve o seu número acima e clique em "Salvar Alterações".</li>
+                  <li>Pronto! Você receberá alertas de vendas e pagamentos automaticamente.</li>
+                </ol>
               </div>
-              <Button variant="premium" className="flex items-center gap-2">
+
+              <Button variant="premium" className="flex items-center gap-2" onClick={handleSaveProfile}>
                 <Save size={18} /> Salvar Alterações
               </Button>
             </CardContent>
@@ -99,29 +121,18 @@ export default function PerfilPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Preferências do Sistema</CardTitle>
-              <CardDescription>Personalize como o sistema deve se comportar.</CardDescription>
+              <CardTitle>Informações da Conta</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30">
-                <div className="flex items-center gap-3">
-                  <Bell size={18} className="text-primary" />
-                  <div>
-                    <p className="text-sm font-bold">Notificações de Vendas</p>
-                    <p className="text-xs text-muted-foreground">Receber alerta a cada nova venda</p>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Nome</label>
+                  <Input value={user?.name || ""} disabled className="bg-slate-50" />
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 accent-gold-500" />
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30">
-                <div className="flex items-center gap-3">
-                  <Shield size={18} className="text-primary" />
-                  <div>
-                    <p className="text-sm font-bold">Autenticação em Duas Etapas</p>
-                    <p className="text-xs text-muted-foreground">Aumentar segurança da conta</p>
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">E-mail</label>
+                  <Input value={user?.email || ""} disabled className="bg-slate-50" />
                 </div>
-                <input type="checkbox" className="w-5 h-5 accent-gold-500" />
               </div>
             </CardContent>
           </Card>

@@ -28,15 +28,17 @@ import { useApp } from "@/lib/context";
 import { formatCurrency, cn } from "@/lib/utils";
 
 export default function NotinhasPage() {
-  const { products, notinhas, addNotinha, addItemToNotinha, updateNotinhaItem, payNotinha, updateNotinha } = useApp();
+  const { products, notinhas, addNotinha, addItemToNotinha, updateNotinhaItem, payNotinha, updateNotinha, deleteNotinha } = useApp();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [selectedNotinha, setSelectedNotinha] = useState<any>(null);
   const [editingNotinha, setEditingNotinha] = useState<any>(null);
+  const [payDiscount, setPayDiscount] = useState("0");
 
   const [newNotinhaName, setNewNotinhaName] = useState("");
   const [newNotinhaObs, setNewNotinhaObs] = useState("");
@@ -77,10 +79,24 @@ export default function NotinhasPage() {
     toast(`${product.name} adicionado!`);
   };
 
-  const handlePay = (id: string, customerName: string) => {
-    if (confirm(`Confirmar pagamento da notinha de ${customerName}? O valor será adicionado ao faturamento.`)) {
-      payNotinha(id);
-      toast(`Notinha de ${customerName} paga e faturada!`);
+  const handleOpenPay = (notinha: any) => {
+    setSelectedNotinha(notinha);
+    setPayDiscount("0");
+    setIsPayModalOpen(true);
+  };
+
+  const handleConfirmPay = () => {
+    if (selectedNotinha) {
+      payNotinha(selectedNotinha.id, parseFloat(payDiscount) || 0);
+      setIsPayModalOpen(false);
+      setSelectedNotinha(null);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Tem certeza que deseja excluir esta notinha permanentemente?")) {
+      deleteNotinha(id);
+      toast("Notinha removida.");
     }
   };
 
@@ -232,15 +248,23 @@ export default function NotinhasPage() {
                           {n.status}
                         </div>
                         {n.status === 'pendente' && (
-                          <button 
-                            onClick={() => {
-                              setEditingNotinha(n);
-                              setIsEditModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-600 transition-all"
-                          >
-                            <Edit size={14} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => {
+                                setEditingNotinha(n);
+                                setIsEditModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-600 transition-all"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(n.id)}
+                              className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-all"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -316,7 +340,7 @@ export default function NotinhasPage() {
                             variant="premium" 
                             size="lg"
                             className="rounded-xl md:rounded-2xl h-11 md:h-14 font-bold text-xs md:text-base bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20 border-none"
-                            onClick={() => handlePay(n.id, n.customerName)}
+                            onClick={() => handleOpenPay(n)}
                             disabled={n.items.length === 0}
                           >
                             <CheckCircle2 size={16} className="mr-1.5 md:mr-2" />
@@ -407,6 +431,50 @@ export default function NotinhasPage() {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* Modal Pagamento com Desconto */}
+      <Modal
+        isOpen={isPayModalOpen}
+        onClose={() => setIsPayModalOpen(false)}
+        title={`Receber de: ${selectedNotinha?.customerName}`}
+      >
+        <div className="space-y-6 p-2">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Fiado</span>
+              <span className="font-bold">{formatCurrency(calculateTotal(selectedNotinha?.items || []))}</span>
+            </div>
+            <div className="flex justify-between items-center text-rose-600">
+              <span className="text-xs font-black uppercase tracking-widest">Valor Final</span>
+              <span className="text-2xl font-black">
+                {formatCurrency(calculateTotal(selectedNotinha?.items || []) - (parseFloat(payDiscount) || 0))}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Abatimento / Desconto (R$)</label>
+            <Input 
+              type="number" 
+              step="0.01"
+              placeholder="0,00" 
+              className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-rose-500/20"
+              value={payDiscount}
+              onChange={(e) => setPayDiscount(e.target.value)}
+            />
+            <p className="text-[10px] text-slate-500 font-medium italic">O desconto será subtraído do total da notinha ao finalizar.</p>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button variant="ghost" className="flex-1 h-14 rounded-2xl font-bold" onClick={() => setIsPayModalOpen(false)}>
+              Voltar
+            </Button>
+            <Button variant="premium" className="flex-1 h-14 rounded-2xl font-bold bg-rose-600 hover:bg-rose-700 text-white" onClick={handleConfirmPay}>
+              Confirmar Recebimento
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Modal Adicionar Itens à Notinha */}

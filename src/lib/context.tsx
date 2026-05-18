@@ -50,6 +50,7 @@ interface Comanda {
   status: 'aberta' | 'paga';
   date: string;
   observation?: string;
+  discount?: number;
   owner_email?: string;
 }
 
@@ -67,7 +68,17 @@ interface Notinha {
   date: string;
   status: 'pendente' | 'pago';
   observation?: string;
+  discount?: number;
   owner_email?: string;
+}
+
+interface User {
+  name: string;
+  email: string;
+  isOwner: boolean;
+  ownerEmail?: string;
+  permissions?: string[];
+  whatsappNumber?: string; // Para notificações
 }
 
 interface AppContextType {
@@ -90,13 +101,15 @@ interface AppContextType {
   addComanda: (comanda: Omit<Comanda, 'id' | 'date' | 'status' | 'items'>) => void;
   addItemToComanda: (comandaId: string, item: ComandaItem) => void;
   updateComandaItem: (comandaId: string, productId: string, quantity: number) => void;
-  payComanda: (id: string) => void;
+  payComanda: (id: string, customDiscount?: number) => void;
   updateComanda: (id: string, comanda: Partial<Comanda>) => void;
+  deleteComanda: (id: string) => void;
   addNotinha: (notinha: Omit<Notinha, 'id' | 'date' | 'status' | 'items'>) => void;
   addItemToNotinha: (notinhaId: string, item: NotinhaItem) => void;
   updateNotinhaItem: (notinhaId: string, productId: string, quantity: number) => void;
   updateNotinha: (id: string, notinha: Partial<Notinha>) => void;
-  payNotinha: (id: string) => void;
+  deleteNotinha: (id: string) => void;
+  payNotinha: (id: string, customDiscount?: number) => void;
   addEmployee: (employee: any) => void;
   deleteEmployee: (id: string) => void;
   updateEmployeePermissions: (email: string, permissions: string[]) => void;
@@ -108,8 +121,8 @@ interface AppContextType {
   clearAllData: () => void;
   registerUser: (userData: any) => void;
   forceSyncEmployees: () => Promise<boolean>;
-    syncAllDataToCloud: () => Promise<boolean>;
-  }
+  syncAllDataToCloud: () => Promise<boolean>;
+}
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -576,6 +589,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setNotifications([]);
   };
 
+  const sendWhatsAppNotification = async (message: string) => {
+    // Pegar as configurações do usuário logado (dono ou vinculado ao dono)
+    if (!user) return;
+    const ownerEmail = (user.isOwner ? user.email : (user.ownerEmail || user.email)).toLowerCase().trim();
+    
+    try {
+      // 1. Buscar o número de WhatsApp do dono no Supabase
+      const { data, error } = await supabase
+        .from('smokings_registry')
+        .select('whatsappNumber')
+        .eq('email', ownerEmail)
+        .maybeSingle();
+
+      if (error || !data?.whatsappNumber) {
+        console.log("WhatsApp não configurado para este dono.");
+        return;
+      }
+
+      const phoneNumber = data.whatsappNumber.replace(/\D/g, ''); // Apenas números
+      
+      // 2. Usar CallMeBot (API Gratuita e simples para notificações)
+      // Tutorial: O dono deve enviar "allow send messages" para +34 644 20 47 56 no WhatsApp
+      // E pegar o seu código (apikey)
+      const apiKey = "9264227"; // API Key padrão de teste ou configurável
+      
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${phoneNumber}&text=${encodeURIComponent(message)}&apikey=${apiKey}`;
+      
+      await fetch(url, { mode: 'no-cors' }); // Envio assíncrono
+      console.log("Notificação enviada ao WhatsApp:", phoneNumber);
+    } catch (err) {
+      console.warn("Erro ao enviar notificação WhatsApp:", err);
+    }
+  };
+
   const addSale = async (saleData: Omit<Sale, 'id' | 'date'>) => {
     const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
     
@@ -592,11 +639,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Envia para o Supabase IMEDIATAMENTE
     try {
       await supabase.from('sales').upsert([newSale]);
+      
+      // NOTIFICAÇÃO WHATSAPP
+      const totalAmount = newSale.amount * newSale.quantity;
+      const msg = `🚀 *Nova Venda Registrada!*\n\n📦 *Produto:* ${newSale.product}\n🔢 *Qtd:* ${newSale.quantity}\n💰 *Valor:* R$ ${totalAmount.toFixed(2)}\n👤 *Vendedor:* ${user?.name || 'Sistema'}`;
+      sendWhatsAppNotification(msg);
+
     } catch (err) {
       console.warn("Erro ao salvar venda na nuvem:", err);
     }
     
-    addNotification({
+    addNotification({ 
       title: "Nova Venda",
       message: `${saleData.quantity}x ${saleData.product} faturado com sucesso.`,
       type: "success"
@@ -756,12 +809,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const payComanda = async (id: string) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+  const payComanda = async (id: string, customDiscount: number = 0) => {
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     const comanda = comandas.find(c => c.id === id);
     if (comanda && comanda.status === 'aberta') {
+      const totalItems = comanda.items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+      const finalTotal = totalItems - customDiscount;
+
       // Adicionar cada item ao faturamento (sales)
+      // Nota: O desconto é aplicado proporcionalmente ou apenas registrado
       comanda.items.forEach(item => {
         addSale({
           product: item.name,
@@ -770,25 +827,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       });
       
-      const updatedComanda = { ...comanda, status: 'paga', owner_email: ownerPrefix };
+      const updatedComanda = { 
+        ...comanda, 
+        status: 'paga', 
+        discount: customDiscount,
+        owner_email: ownerPrefix 
+      };
+      
       setComandas(prev => prev.map(c => c.id === id ? updatedComanda : c));
       
       try {
         await supabase.from('comandas').upsert([updatedComanda]);
+        
+        const msg = `🧾 *Comanda Paga!*\n\n👤 *Cliente:* ${comanda.customerName}\n💰 *Total Itens:* ${formatCurrency(totalItems)}\n📉 *Desconto:* ${formatCurrency(customDiscount)}\n✅ *Valor Final:* ${formatCurrency(finalTotal)}`;
+        sendWhatsAppNotification(msg);
+
       } catch (err) {
         console.error("Erro ao pagar comanda na nuvem:", err);
       }
 
       addNotification({
         title: "Comanda Paga",
-        message: `Comanda de ${comanda.customerName} finalizada.`,
+        message: `Comanda de ${comanda.customerName} finalizada. Total: ${formatCurrency(finalTotal)}`,
         type: "success"
       });
     }
   };
 
   const updateComanda = async (id: string, comandaUpdate: Partial<Comanda>) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     setComandas(prev => {
       const newComandas = prev.map(c => {
@@ -805,6 +872,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const deleteComanda = async (id: string) => {
+    setComandas(prev => prev.filter(c => c.id !== id));
+    try {
+      await supabase.from('comandas').delete().eq('id', id);
+      toast("Comanda removida permanentemente.", "info");
+    } catch (err) {
+      console.error("Erro ao deletar comanda:", err);
+    }
+  };
+
   // Funções de Notinhas
   const addNotinha = async (notinhaData: Omit<Notinha, 'id' | 'date' | 'status' | 'items'>) => {
     const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
@@ -816,6 +893,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       status: 'pendente',
       items: [],
       observation: notinhaData.observation || "",
+      discount: 0,
       owner_email: ownerPrefix
     };
     
@@ -829,7 +907,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addItemToNotinha = async (notinhaId: string, item: NotinhaItem) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     setNotinhas(prev => {
       const newNotinhas = prev.map(n => {
@@ -858,7 +936,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateNotinhaItem = async (notinhaId: string, productId: string, quantity: number) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     setNotinhas(prev => {
       const newNotinhas = prev.map(n => {
@@ -884,7 +962,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateNotinha = async (id: string, notinhaUpdate: Partial<Notinha>) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     setNotinhas(prev => {
       const newNotinhas = prev.map(n => {
@@ -901,11 +979,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const payNotinha = async (id: string) => {
-    const ownerPrefix = user?.isOwner ? user.email.toLowerCase().trim() : (user?.ownerEmail?.toLowerCase().trim() || user?.email.toLowerCase().trim());
+  const deleteNotinha = async (id: string) => {
+    setNotinhas(prev => prev.filter(n => n.id !== id));
+    try {
+      await supabase.from('notinhas').delete().eq('id', id);
+    } catch (err) {
+      console.error("Erro ao deletar notinha:", err);
+    }
+  };
+
+  const payNotinha = async (id: string, customDiscount: number = 0) => {
+    const ownerPrefix = (user?.isOwner ? user.email : (user?.ownerEmail || user?.email))?.toLowerCase().trim();
     
     const notinha = notinhas.find(n => n.id === id);
     if (notinha && notinha.status === 'pendente') {
+      const totalItems = notinha.items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+      const finalTotal = totalItems - customDiscount;
+
       // Adicionar cada item ao faturamento
       notinha.items.forEach(item => {
         addSale({
@@ -915,18 +1005,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       });
       
-      const updatedNotinha = { ...notinha, status: 'pago', owner_email: ownerPrefix };
+      const updatedNotinha = { 
+        ...notinha, 
+        status: 'pago', 
+        discount: customDiscount,
+        owner_email: ownerPrefix 
+      };
+      
       setNotinhas(prev => prev.map(n => n.id === id ? updatedNotinha : n));
 
       try {
         await supabase.from('notinhas').upsert([updatedNotinha]);
+        
+        const msg = `💰 *Notinha Paga!*\n\n👤 *Cliente:* ${notinha.customerName}\n💰 *Total Fiado:* ${formatCurrency(totalItems)}\n📉 *Desconto:* ${formatCurrency(customDiscount)}\n✅ *Valor Final:* ${formatCurrency(finalTotal)}`;
+        sendWhatsAppNotification(msg);
+
       } catch (err) {
         console.error("Erro ao pagar notinha na nuvem:", err);
       }
 
       addNotification({
         title: "Notinha Paga",
-        message: `Notinha de ${notinha.customerName} paga com sucesso.`,
+        message: `Notinha de ${notinha.customerName} paga com sucesso. Total: ${formatCurrency(finalTotal)}`,
         type: "success"
       });
     }

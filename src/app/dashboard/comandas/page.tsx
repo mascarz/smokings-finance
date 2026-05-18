@@ -28,15 +28,17 @@ import { useApp } from "@/lib/context";
 import { formatCurrency, cn } from "@/lib/utils";
 
 export default function ComandasPage() {
-  const { products, comandas, addComanda, addItemToComanda, updateComandaItem, payComanda, updateComanda } = useApp();
+  const { products, comandas, addComanda, addItemToComanda, updateComandaItem, payComanda, updateComanda, deleteComanda } = useApp();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [selectedComanda, setSelectedComanda] = useState<any>(null);
   const [editingComanda, setEditingComanda] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  const [payDiscount, setPayDiscount] = useState("0");
 
   const [newComandaName, setNewComandaName] = useState("");
   const [newComandaObs, setNewComandaObs] = useState("");
@@ -77,10 +79,23 @@ export default function ComandasPage() {
     toast(`${product.name} adicionado!`);
   };
 
-  const handlePay = (id: string) => {
-    if (confirm("Deseja finalizar e pagar esta comanda? O valor será adicionado ao faturamento.")) {
-      payComanda(id);
-      toast("Comanda paga e faturada!");
+  const handleOpenPay = (comanda: any) => {
+    setSelectedComanda(comanda);
+    setPayDiscount("0");
+    setIsPayModalOpen(true);
+  };
+
+  const handleConfirmPay = () => {
+    if (selectedComanda) {
+      payComanda(selectedComanda.id, parseFloat(payDiscount) || 0);
+      setIsPayModalOpen(false);
+      setSelectedComanda(null);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Tem certeza que deseja excluir esta comanda permanentemente?")) {
+      deleteComanda(id);
     }
   };
 
@@ -186,15 +201,23 @@ export default function ComandasPage() {
                           </div>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => {
-                          setEditingComanda(comanda);
-                          setIsEditModalOpen(true);
-                        }}
-                        className="p-2 rounded-xl hover:bg-gold-500/10 text-slate-400 hover:text-gold-600 transition-all"
-                      >
-                        <Edit size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            setEditingComanda(comanda);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="p-2 rounded-xl hover:bg-gold-500/10 text-slate-400 hover:text-gold-600 transition-all"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(comanda.id)}
+                          className="p-2 rounded-xl hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   </CardHeader>
 
@@ -263,7 +286,7 @@ export default function ComandasPage() {
                           variant="premium" 
                           size="lg"
                           className="rounded-xl md:rounded-2xl h-11 md:h-14 font-bold text-xs md:text-base bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
-                          onClick={() => handlePay(comanda.id)}
+                          onClick={() => handleOpenPay(comanda)}
                           disabled={comanda.items.length === 0}
                         >
                           <CheckCircle size={16} className="mr-1.5 md:mr-2" />
@@ -353,6 +376,50 @@ export default function ComandasPage() {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* Modal Pagamento com Desconto */}
+      <Modal
+        isOpen={isPayModalOpen}
+        onClose={() => setIsPayModalOpen(false)}
+        title={`Finalizar: ${selectedComanda?.customerName}`}
+      >
+        <div className="space-y-6 p-2">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total dos Itens</span>
+              <span className="font-bold">{formatCurrency(calculateTotal(selectedComanda?.items || []))}</span>
+            </div>
+            <div className="flex justify-between items-center text-emerald-600">
+              <span className="text-xs font-black uppercase tracking-widest">Valor Final</span>
+              <span className="text-2xl font-black">
+                {formatCurrency(calculateTotal(selectedComanda?.items || []) - (parseFloat(payDiscount) || 0))}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Aplicar Desconto (R$)</label>
+            <Input 
+              type="number" 
+              step="0.01"
+              placeholder="0,00" 
+              className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-emerald-500/20"
+              value={payDiscount}
+              onChange={(e) => setPayDiscount(e.target.value)}
+            />
+            <p className="text-[10px] text-slate-500 font-medium italic">O desconto será subtraído do total final da comanda.</p>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button variant="ghost" className="flex-1 h-14 rounded-2xl font-bold" onClick={() => setIsPayModalOpen(false)}>
+              Voltar
+            </Button>
+            <Button variant="premium" className="flex-1 h-14 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleConfirmPay}>
+              Confirmar e Pagar
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Modal Adicionar Itens - Full Catalog UI */}
