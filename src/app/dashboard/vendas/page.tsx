@@ -92,36 +92,40 @@ export default function VendasPage() {
     }));
   };
 
-  const cartTotal = cart.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
+  const cartTotal = (cart || []).reduce((acc, curr) => acc + ((curr.amount || 0) * (curr.quantity || 0)), 0);
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  const filteredProducts = (products || []).filter(p => 
+    p && p.name && p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
   const handleExportExcel = () => {
-    if (sales.length === 0) {
+    if (!sales || sales.length === 0) {
       toast("Não há vendas para exportar.", "warning");
       return;
     }
-    const dataToExport = sales.map(s => ({
+    const dataToExport = (sales || []).map(s => ({
       Produto: s.product,
       Quantidade: s.quantity,
       'Preço Unitário': formatCurrency(s.amount),
-      Total: formatCurrency(s.amount * s.quantity),
-      Data: new Date(s.date).toLocaleString('pt-BR')
+      Total: formatCurrency((s.amount || 0) * (s.quantity || 0)),
+      Data: s.date ? new Date(s.date).toLocaleString('pt-BR') : 'N/A'
     }));
     exportToExcel("Historico_de_Vendas_Smokings", dataToExport);
     toast("Histórico exportado com sucesso!");
   };
 
-  const filteredByDate = dateFilter === 'all' ? sales : filterByDateRange(sales, dateFilter);
+  const filteredByDate = dateFilter === 'all' ? (sales || []) : filterByDateRange(sales || [], dateFilter);
 
-  const filteredSales = filteredByDate
-    .filter(sale => sale.product.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const filteredSales = (filteredByDate || [])
+    .filter(sale => sale && sale.product && sale.product.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    });
 
-  const totalRevenue = filteredSales.reduce((acc, curr) => acc + (curr.amount * curr.quantity), 0);
-  const totalItems = filteredSales.reduce((acc, curr) => acc + curr.quantity, 0);
+  const totalRevenue = (filteredSales || []).reduce((acc, curr) => acc + ((curr.amount || 0) * (curr.quantity || 0)), 0);
+  const totalItems = (filteredSales || []).reduce((acc, curr) => acc + (curr.quantity || 0), 0);
 
   return (
     <div className="space-y-6 md:space-y-10 animate-in relative pb-20 md:pb-0">

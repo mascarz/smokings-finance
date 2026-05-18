@@ -99,16 +99,16 @@ export default function ComandasPage() {
     }
   };
 
-  const filteredComandas = comandas.filter(c => 
-    c.customerName.toLowerCase().includes(searchTerm.toLowerCase()) && c.status === 'aberta'
+  const filteredComandas = (comandas || []).filter(c => 
+    c && c.customerName && c.customerName.toLowerCase().includes(searchTerm.toLowerCase()) && c.status === 'aberta'
   );
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  const filteredProducts = (products || []).filter(p => 
+    p && p.name && p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
-  const calculateTotal = (items: any[]) => {
-    return items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+  const calculateTotal = (items: any[] = []) => {
+    return (items || []).reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
   };
 
   return (
@@ -229,13 +229,13 @@ export default function ComandasPage() {
                       </div>
                     )}
                     <div className="space-y-2 md:space-y-3 flex-1 overflow-y-auto max-h-[150px] md:max-h-[200px] pr-1 custom-scrollbar">
-                      {comanda.items.length === 0 ? (
+                      {(!comanda.items || comanda.items.length === 0) ? (
                         <div className="flex flex-col items-center justify-center py-6 md:py-8 opacity-30">
                           <ShoppingBag size={24} className="mb-2 md:size-[32px]" />
                           <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-center">Aguardando pedidos</p>
                         </div>
                       ) : (
-                        comanda.items.map((item) => (
+                        (comanda.items || []).map((item) => (
                           <div key={item.productId} className="flex items-center justify-between p-2.5 md:p-3 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                             <div className="flex-1 min-w-0 mr-2">
                               <p className="font-bold text-xs md:text-sm tracking-tight truncate">{item.name}</p>

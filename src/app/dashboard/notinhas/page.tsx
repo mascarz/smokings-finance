@@ -163,7 +163,7 @@ export default function NotinhasPage() {
           <CardContent className="p-4 md:p-8">
             <p className="text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 md:mb-2">Em Aberto</p>
             <h3 className="text-xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-white truncate">
-              {notinhas.filter(n => n.status === 'pendente').length}
+              {(notinhas || []).filter(n => n && n.status === 'pendente').length}
             </h3>
           </CardContent>
         </Card>

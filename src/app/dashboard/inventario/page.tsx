@@ -75,9 +75,9 @@ export default function InventarioPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = (products || []).filter(p => 
+    p && p.name && (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.category && p.category.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
   return (
