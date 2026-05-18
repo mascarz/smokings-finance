@@ -104,21 +104,21 @@ export default function NotinhasPage() {
     return items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
   };
 
-  const filteredNotinhas = notinhas.filter(n => 
-    n.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredNotinhas = (notinhas || []).filter(n => 
+    n && n.customerName && n.customerName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  const filteredProducts = (products || []).filter(p => 
+    p && p.name && p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
-  const pendingTotal = notinhas
-    .filter(n => n.status === 'pendente')
-    .reduce((acc, curr) => acc + calculateTotal(curr.items), 0);
+  const pendingTotal = (notinhas || [])
+    .filter(n => n && n.status === 'pendente')
+    .reduce((acc, curr) => acc + calculateTotal(curr.items || []), 0);
 
-  const receivedTotal = notinhas
-    .filter(n => n.status === 'pago')
-    .reduce((acc, curr) => acc + calculateTotal(curr.items), 0);
+  const receivedTotal = (notinhas || [])
+    .filter(n => n && n.status === 'pago')
+    .reduce((acc, curr) => acc + calculateTotal(curr.items || []), 0);
 
   return (
     <div className="space-y-6 md:space-y-10 animate-in relative pb-20 md:pb-0">
