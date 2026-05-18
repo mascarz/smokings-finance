@@ -10,6 +10,7 @@ import {
   Clock, 
   User, 
   Edit, 
+  Trash2,
   Package, 
   ChevronRight,
   ArrowRight,
@@ -101,7 +102,7 @@ export default function NotinhasPage() {
   };
 
   const calculateTotal = (items: any[]) => {
-    return items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+    return (items || []).reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
   };
 
   const filteredNotinhas = (notinhas || []).filter(n => 
@@ -278,7 +279,7 @@ export default function NotinhasPage() {
                       </div>
                     )}
                     <div className="space-y-2 md:space-y-3 flex-1 overflow-y-auto max-h-[120px] md:max-h-[150px] pr-1 custom-scrollbar">
-                      {n.items.length === 0 ? (
+                      {(!n.items || n.items.length === 0) ? (
                         <div className="flex flex-col items-center justify-center py-6 md:py-8 opacity-30">
                           <ShoppingBag size={20} className="mb-1.5 md:size-[24px]" />
                           <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-center">Nenhum item</p>

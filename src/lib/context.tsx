@@ -354,7 +354,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.log(`- Notinhas: ${notinhasData?.length || 0}`);
         const finalNotinhas = (notinhasData || []).map(n => ({
           ...n,
-          customerName: n.customerName || n.customername
+          customerName: n.customerName || n.customername,
+          items: n.items || []
         }));
         setNotinhas(finalNotinhas);
         localStorage.setItem(`smokings_notinhas_${normalizedOwnerEmail}`, JSON.stringify(finalNotinhas));
@@ -959,11 +960,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     const notinha = notinhas.find(n => n.id === id);
     if (notinha && notinha.status === 'pendente') {
-      const totalItems = notinha.items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+      const items = notinha.items || [];
+      const totalItems = items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
       const finalTotal = totalItems - customDiscount;
 
       // Adicionar cada item ao faturamento
-      notinha.items.forEach(item => {
+      items.forEach(item => {
         addSale({
           product: `Notinha: ${item.name} (${notinha.customerName})`,
           amount: item.price,
