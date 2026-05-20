@@ -49,16 +49,19 @@ function SidebarItem({ href, icon: Icon, label, active }: SidebarItemProps) {
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
+        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
         active 
-          ? "bg-gold-500 text-black shadow-lg shadow-gold-500/20" 
-          : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200"
+          ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" 
+          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
       )}
     >
-      <Icon size={20} className={cn("transition-all duration-300 group-hover:scale-110", active ? "text-black" : "text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200")} />
-      <span className="font-bold text-sm tracking-tight">{label}</span>
+      <Icon size={18} className={cn("transition-all duration-200", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+      <span className="font-semibold text-sm tracking-tight">{label}</span>
       {active && (
-        <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+        <motion.div 
+          layoutId="sidebar-active"
+          className="absolute left-0 w-1 h-4 bg-gold-500 rounded-r-full" 
+        />
       )}
     </Link>
   );
@@ -111,22 +114,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const SidebarContent = () => (
     <div className="flex flex-col h-full overflow-y-auto no-scrollbar">
       <div className="flex items-center gap-3 mb-10 px-2 py-4 shrink-0">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-black to-slate-800 flex items-center justify-center shadow-2xl shadow-gold-500/30 border border-gold-500/40 group overflow-hidden">
+        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/10 border border-white/10 group overflow-hidden">
           <div className="relative group-hover:scale-110 transition-transform duration-500">
-            <Crown className="text-gold-500 fill-gold-500/20" size={26} />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-gold-400 rounded-full animate-ping" />
+            <Crown className="text-gold-500 fill-gold-500/20" size={22} />
           </div>
         </div>
         <div className="flex flex-col">
           <div className="flex items-center gap-1">
-            <span className="font-black text-2xl tracking-tighter leading-none text-slate-900 dark:text-white group-hover:text-gold-500 transition-colors">SMOKINGS</span>
+            <span className="font-black text-xl tracking-tight leading-none text-foreground">SMOKINGS</span>
           </div>
-          <span className="text-[9px] font-black text-gold-600 tracking-[0.3em] uppercase opacity-80">Tabacaria & Lounge</span>
+          <span className="text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase">Finance Control</span>
         </div>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-1.5">
-        <p className="px-4 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menu Principal</p>
+      <nav className="flex-1 flex flex-col gap-1">
+        <p className="px-3 mb-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Menu</p>
         {filteredMenuItems.map((item) => (
           <div key={item.href} onClick={() => setIsSidebarOpen(false)}>
             <SidebarItem 
@@ -137,17 +139,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ))}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-slate-200 dark:border-slate-800">
-        <p className="px-4 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configurações</p>
+      <div className="mt-auto flex flex-col gap-1 pt-6 border-t border-border">
+        <p className="px-3 mb-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Acesso</p>
         <div onClick={() => setIsSidebarOpen(false)}>
           <SidebarItem href="/dashboard/perfil" icon={UserCircle} label="Meu Perfil" active={pathname === "/dashboard/perfil"} />
         </div>
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-300 group w-full text-left"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-destructive hover:bg-destructive/5 transition-all duration-200 group w-full text-left"
         >
-          <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
-          <span className="font-semibold text-sm tracking-tight">Sair da Conta</span>
+          <LogOut size={18} className="group-hover:translate-x-0.5 transition-transform" />
+          <span className="font-semibold text-sm tracking-tight">Encerrar Sessão</span>
         </button>
       </div>
     </div>
@@ -193,39 +195,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div className="flex-1 lg:ml-72 flex flex-col w-full min-w-0">
         {/* Header */}
-        <header className="h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-xl z-30 border-b border-slate-200/50 dark:border-slate-800/50">
+        <header className="h-16 px-4 md:px-8 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-xl z-30 border-b border-border">
           <div className="flex items-center gap-3 md:gap-4">
             <button 
-              className="lg:hidden p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:bg-slate-50 transition-colors"
+              className="lg:hidden p-2 bg-secondary border border-border rounded-lg shadow-sm hover:bg-muted transition-colors"
               onClick={() => setIsSidebarOpen(true)}
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
 
             <div className="flex flex-col">
-              <h2 className="text-[10px] font-black text-gold-600 uppercase tracking-[0.2em] mb-0.5 truncate max-w-[120px] md:max-w-none">Premium Lounge</h2>
               <div className="flex items-center gap-2">
-                <h1 className="text-base md:text-xl font-black tracking-tight truncate max-w-[120px] md:max-w-none text-slate-900 dark:text-white">{user?.name || "Premium User"}</h1>
-                <div className="hidden xs:block px-2 py-0.5 rounded-md bg-gold-500 text-black text-[8px] md:text-[9px] font-black uppercase tracking-wider shadow-sm">
+                <h1 className="text-sm md:text-base font-bold tracking-tight text-foreground truncate max-w-[150px] md:max-w-none">
+                  {user?.name || "Premium User"}
+                </h1>
+                <div className="hidden xs:flex px-1.5 py-0.5 rounded-md bg-secondary text-muted-foreground text-[9px] font-bold uppercase tracking-wider border border-border">
                   {user?.isOwner ? "Proprietário" : "Funcionário"}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             <div className="flex items-center gap-1 md:gap-2">
               <NotificationCenter />
+              <div className="w-px h-4 bg-border mx-2 hidden sm:block" />
               <ThemeToggle />
             </div>
             
-            <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-6 border-l border-slate-200 dark:border-slate-800">
-              <div className="flex flex-col items-end hidden sm:flex">
-                <span className="text-sm font-bold tracking-tight leading-none">{user?.name || "Admin"}</span>
-                <span className="text-[10px] text-slate-400 font-medium">Online agora</span>
-              </div>
-              <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-inner overflow-hidden">
-                <UserCircle size={20} className="text-slate-400 md:size-[24px]" />
+            <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-6 border-l border-border">
+              <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-primary flex items-center justify-center border border-white/10 shadow-sm overflow-hidden ring-2 ring-secondary">
+                <span className="text-xs font-bold text-primary-foreground">
+                  {user?.name?.substring(0, 2).toUpperCase() || "AD"}
+                </span>
               </div>
             </div>
           </div>
@@ -259,14 +261,12 @@ function NotificationCenter() {
       <Button 
         variant="ghost" 
         size="icon" 
-        className="w-9 h-9 md:w-10 md:h-10 rounded-xl relative hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        className="w-8 h-8 md:w-9 md:h-9 rounded-lg relative hover:bg-secondary transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <Bell size={18} className="text-slate-500 md:size-[20px]" />
+        <Bell size={18} className="text-muted-foreground" />
         {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 w-4 h-4 bg-rose-500 text-white text-[8px] font-black rounded-full border-2 border-background flex items-center justify-center">
-            {unreadCount}
-          </span>
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border-2 border-background" />
         )}
       </Button>
 
@@ -275,60 +275,61 @@ function NotificationCenter() {
           <>
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
             <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute right-0 mt-2 w-[320px] md:w-[400px] bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden"
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              className="absolute right-0 mt-2 w-[320px] md:w-[380px] bg-card rounded-xl shadow-xl border border-border z-50 overflow-hidden"
             >
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+              <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
                 <div className="flex items-center gap-2">
-                  <Bell size={16} className="text-slate-400" />
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">Notificações</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notificações</span>
+                  {unreadCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                      {unreadCount}
+                    </span>
+                  )}
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-7 px-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500"
+                  className="h-7 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-destructive"
                   onClick={clearNotifications}
                 >
-                  Limpar Tudo
+                  Limpar
                 </Button>
               </div>
 
-              <div className="max-h-[400px] overflow-y-auto no-scrollbar">
+              <div className="max-h-[350px] overflow-y-auto no-scrollbar">
                 {notifications.length === 0 ? (
-                  <div className="p-10 text-center space-y-2">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-300">
-                      <Bell size={24} />
-                    </div>
-                    <p className="text-xs font-bold text-slate-400">Nenhuma notificação nova</p>
+                  <div className="p-12 text-center">
+                    <p className="text-xs font-medium text-muted-foreground">Tudo em dia por aqui.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                  <div className="divide-y divide-border">
                     {notifications.map((notif) => (
                       <div 
                         key={notif.id} 
                         className={cn(
                           "p-4 transition-colors relative group",
-                          !notif.read ? "bg-slate-50/50 dark:bg-slate-800/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20"
+                          !notif.read ? "bg-muted/20" : "hover:bg-muted/10"
                         )}
                         onClick={() => markNotificationAsRead(notif.id)}
                       >
                         <div className="flex gap-3">
-                          <div className="mt-1">{getTypeIcon(notif.type)}</div>
-                          <div className="space-y-1 flex-1">
-                            <p className={cn("text-xs font-black tracking-tight", !notif.read ? "text-slate-900 dark:text-white" : "text-slate-500")}>
+                          <div className="mt-0.5">{getTypeIcon(notif.type)}</div>
+                          <div className="space-y-0.5 flex-1">
+                            <p className={cn("text-xs font-bold", !notif.read ? "text-foreground" : "text-muted-foreground")}>
                               {notif.title}
                             </p>
-                            <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
                               {notif.message}
                             </p>
-                            <p className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter">
+                            <p className="text-[9px] font-medium text-muted-foreground/60 uppercase">
                               {new Date(notif.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                           {!notif.read && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 self-center" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary self-center" />
                           )}
                         </div>
                       </div>
@@ -336,12 +337,6 @@ function NotificationCenter() {
                   </div>
                 )}
               </div>
-
-              {notifications.length > 0 && (
-                <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-800/50">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Suas notificações são salvas localmente</span>
-                </div>
-              )}
             </motion.div>
           </>
         )}

@@ -4,10 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, ArrowRight, Github, Chrome } from "lucide-react";
+import { Mail, Lock, ArrowRight, Github, Chrome, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { useApp } from "@/lib/context";
 import { supabase } from "@/lib/supabase";
@@ -136,109 +135,138 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6 lg:p-8">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gold-500/10 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
+    <div className="min-h-screen flex bg-slate-950">
+      {/* Left Side - Visual/Branding */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black z-0" />
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gold-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3" />
+        
+        <div className="relative z-10 max-w-lg space-y-8">
+          <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-2xl">
+            <Crown className="text-gold-500 fill-gold-500/10" size={32} />
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-5xl font-black text-white tracking-tight leading-tight">
+              Gestão de <br />
+              <span className="text-gold-500">Elite</span> para sua <br />
+              Tabacaria.
+            </h1>
+            <p className="text-slate-400 text-lg font-medium leading-relaxed">
+              O sistema financeiro mais robusto e elegante do mercado, projetado para operações que buscam excelência.
+            </p>
+          </div>
+          <div className="pt-8 flex items-center gap-6">
+            <div className="space-y-1">
+              <p className="text-2xl font-black text-white">100%</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Segurança</p>
+            </div>
+            <div className="w-px h-10 bg-slate-800" />
+            <div className="space-y-1">
+              <p className="text-2xl font-black text-white">24/7</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Monitoramento</p>
+            </div>
+            <div className="w-px h-10 bg-slate-800" />
+            <div className="space-y-1">
+              <p className="text-2xl font-black text-white">Cloud</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sincronizado</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="absolute bottom-12 left-12 right-12 flex justify-between items-center text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span>© 2026 Smokings Finance</span>
+          <span>Versão Enterprise 2.0</span>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md z-10"
-      >
-        <Card className="border-border shadow-2xl backdrop-blur-sm bg-card/80">
-          <CardHeader className="space-y-1 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-black dark:bg-white flex items-center justify-center">
-                <span className="text-white dark:text-black font-bold text-2xl">S</span>
-              </div>
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white dark:bg-slate-950 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/5 rounded-full blur-[80px] lg:hidden" />
+        
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-[420px] z-10 space-y-10"
+        >
+          <div className="space-y-3">
+            <div className="lg:hidden w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center mb-6">
+              <Crown className="text-gold-500" size={24} />
             </div>
-            <CardTitle className="text-3xl font-extrabold tracking-tight">Bem-vindo de volta</CardTitle>
-            <CardDescription className="text-muted-foreground text-base">
-              Acesse seu painel financeiro premium
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6">
-            <form onSubmit={handleSubmit} className="grid gap-4">
-              <div className="grid gap-2">
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Acesse sua conta</h2>
+            <p className="text-slate-500 font-medium">Insira suas credenciais para gerenciar sua operação.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">E-mail Corporativo</label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-gold-500 transition-colors" size={18} />
                   <Input 
                     type="email" 
-                    placeholder="E-mail profissional" 
-                    className="pl-12" 
+                    placeholder="exemplo@smokings.com" 
+                    className="h-14 pl-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-gold-500/20 font-medium" 
                     required 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
+                  <Link href="/forgot-password" title="Recuperar senha" className="text-[10px] font-bold text-gold-600 hover:text-gold-500 uppercase tracking-widest transition-colors">
+                    Esqueceu?
+                  </Link>
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-gold-500 transition-colors" size={18} />
                   <Input 
                     type="password" 
-                    placeholder="Sua senha segura" 
-                    className="pl-12" 
+                    placeholder="••••••••" 
+                    className="h-14 pl-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-gold-500/20 font-medium" 
                     required 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
-                  <input type="checkbox" className="rounded border-border" />
-                  Lembrar-me
-                </label>
-                <Link href="/forgot-password" title="Recuperar senha" className="text-primary font-medium hover:underline">
-                  Esqueceu a senha?
-                </Link>
-              </div>
-              <Button type="submit" variant="premium" className="w-full h-12 text-lg" disabled={isLoading}>
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Entrando...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    Acessar Dashboard <ArrowRight size={18} />
-                  </div>
-                )}
-              </Button>
-            </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Ou continue com</span>
-              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="h-12 rounded-xl">
-                <Chrome className="mr-2 h-4 w-4" /> Google
-              </Button>
-              <Button variant="outline" className="h-12 rounded-xl">
-                <Github className="mr-2 h-4 w-4" /> GitHub
-              </Button>
+            <Button type="submit" variant="premium" className="w-full h-14 text-sm font-bold bg-slate-950 dark:bg-gold-500 text-white dark:text-black rounded-xl shadow-xl shadow-slate-950/10 dark:shadow-gold-500/10 hover:scale-[1.01] transition-all" disabled={isLoading}>
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  Verificando...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  Entrar no Sistema <ArrowRight size={18} />
+                </div>
+              )}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-100 dark:border-slate-800" />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <p className="text-center text-sm text-muted-foreground">
-              Não tem uma conta?{" "}
-              <Link href="/register" className="text-primary font-bold hover:underline">
-                Começar gratuitamente
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </motion.div>
+            <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
+              <span className="bg-white dark:bg-slate-950 px-4 text-slate-400">Segurança de Dados</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
+            <span>Novo por aqui?</span>
+            <Link href="/register" className="text-gold-600 font-bold hover:underline">
+              Solicitar Acesso
+            </Link>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
